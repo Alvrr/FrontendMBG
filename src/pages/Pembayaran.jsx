@@ -6,17 +6,6 @@ import { id } from "date-fns/locale";
 import Swal from "sweetalert2";
 import { useNavigate } from 'react-router-dom';
 
-
-
-  
-const handleSearchById = () => {
-  const filtered = pembayaran.filter((item) =>
-    item.id_pembayaran.toLowerCase().includes(searchId.toLowerCase())
-  );
-  setFilteredPembayaran(filtered);
-  setCurrentPage(1);
-};
-
 const Pembayaran = () => {
   const navigate = useNavigate([]);
   const [pembayaran, setPembayaran] = useState([]);
@@ -107,6 +96,23 @@ const Pembayaran = () => {
 
   const handleJumlahChange = (index, jumlah) => {
     const list = [...produkDipilih];
+    const produkDetail = produk.find(p => p.id === list[index].id_produk);
+    
+    // Validasi jika jumlah melebihi stok
+    if (produkDetail && parseInt(jumlah) > produkDetail.stok) {
+      Swal.fire({
+        icon: "warning",
+        title: "Jumlah melebihi stok",
+        text: `Stok ${produkDetail.nama_produk} hanya tersedia ${produkDetail.stok}`,
+        confirmButtonText: "OK",
+        customClass: {
+          confirmButton: "bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600",
+        },
+        buttonsStyling: false,
+      });
+      return;
+    }
+    
     list[index].jumlah = parseInt(jumlah);
     list[index].subtotal = list[index].harga * parseInt(jumlah);
     setProdukDipilih(list);
@@ -133,6 +139,24 @@ const Pembayaran = () => {
       return;
     }
 
+    // Validasi stok produk
+    for (const item of produkDipilih) {
+      const produkDetail = produk.find(p => p.id === item.id_produk);
+      if (produkDetail && produkDetail.stok < item.jumlah) {
+        await Swal.fire({
+          icon: "error",
+          title: "Stok tidak mencukupi",
+          text: `Stok ${produkDetail.nama_produk} hanya tersedia ${produkDetail.stok}, tidak dapat membeli ${item.jumlah}`,
+          confirmButtonText: "OK",
+          customClass: {
+            confirmButton: "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700",
+          },
+          buttonsStyling: false,
+        });
+        return;
+      }
+    }
+
     const confirm = await Swal.fire({
       title: "Yakin ingin menyimpan pembayaran ini?",
       icon: "question",
@@ -156,9 +180,22 @@ const Pembayaran = () => {
       };
       await axios.post("http://localhost:5000/pembayaran", data);
 
+      // Update stok produk setelah pembayaran berhasil
+      for (const item of produkDipilih) {
+        const produkDetail = produk.find(p => p.id === item.id_produk);
+        if (produkDetail) {
+          const stokBaru = produkDetail.stok - item.jumlah;
+          await axios.put(`http://localhost:5000/produk/${item.id_produk}`, {
+            ...produkDetail,
+            stok: stokBaru
+          });
+        }
+      }
+
       await Swal.fire({
         icon: "success",
         title: "Pembayaran berhasil disimpan",
+        text: "Stok produk telah diperbarui",
         confirmButtonText: "OK",
         customClass: {
           confirmButton: "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700",
@@ -167,6 +204,7 @@ const Pembayaran = () => {
       });
 
       getPembayaran();
+      getProduk(); // Refresh data produk untuk update stok
       setShowPopup(false);
       setForm({
         id_pelanggan: "",
@@ -175,11 +213,58 @@ const Pembayaran = () => {
         total_bayar: 0,
       });
       setProdukDipilih([]);
-    } catch (err) {
+    } catch {
       Swal.fire({
         icon: "error",
         title: "Gagal menyimpan",
         text: "Terjadi kesalahan saat menyimpan data",
+        confirmButtonText: "OK",
+        customClass: {
+          confirmButton: "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700",
+        },
+        buttonsStyling: false,
+      });
+    }
+  };
+
+  const handleSelesai = async (item) => {
+    const confirm = await Swal.fire({
+      title: "Selesaikan Pembayaran",
+      text: `Yakin ingin menyelesaikan pembayaran dengan ID ${item.id}?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Ya, selesaikan",
+      cancelButtonText: "Batal",
+      customClass: {
+        confirmButton: "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700",
+        cancelButton: "bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500",
+      },
+      buttonsStyling: false,
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      // Di sini nantinya akan ada logic untuk memindahkan data ke riwayat
+      // Untuk sementara kita hanya tampilkan pesan sukses
+      await Swal.fire({
+        icon: "success",
+        title: "Pembayaran Selesai",
+        text: "Data pembayaran akan dipindahkan ke halaman riwayat",
+        confirmButtonText: "OK",
+        customClass: {
+          confirmButton: "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700",
+        },
+        buttonsStyling: false,
+      });
+
+      // Refresh data pembayaran
+      getPembayaran();
+    } catch {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Terjadi kesalahan saat menyelesaikan pembayaran",
         confirmButtonText: "OK",
         customClass: {
           confirmButton: "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700",
@@ -199,9 +284,10 @@ const Pembayaran = () => {
   const filteredPembayaran = pembayaran.filter((item) =>
     item.id.toLowerCase().includes(searchId.toLowerCase())
   );
+  const dataToDisplay = searchId ? filteredPembayaran : pembayaran;
 
-  const totalPages = Math.ceil(filteredPembayaran.length / itemsPerPage);
-  const paginatedData = filteredPembayaran.slice(
+  const totalPages = Math.ceil(dataToDisplay.length / itemsPerPage);
+  const paginatedData = dataToDisplay.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -248,6 +334,7 @@ const Pembayaran = () => {
             <th className="border px-4 py-2">Pelanggan</th>
             <th className="border px-4 py-2">Tanggal</th>
             <th className="border px-4 py-2">Total Bayar</th>
+            <th className="border px-4 py-2">Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -259,6 +346,14 @@ const Pembayaran = () => {
                 {format(new Date(item.tanggal), "dd MMMM yyyy HH:mm:ss", { locale: id })}
               </td>
               <td className="border px-4 py-2">{formatRupiah(item.total_bayar)}</td>
+              <td className="border px-4 py-2">
+                <button
+                  onClick={() => handleSelesai(item)}
+                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
+                >
+                  Selesai
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -309,7 +404,7 @@ const Pembayaran = () => {
                     <option value="">Pilih Produk</option>
                     {produk.map((p) => (
                       <option key={p.id} value={p.id} className="text-black bg-white">
-                        {p.nama_produk}
+                        {p.nama_produk} (Stok: {p.stok})
                       </option>
                     ))}
                   </select>
@@ -317,6 +412,7 @@ const Pembayaran = () => {
                     type="number"
                     className="border p-2 w-1/4"
                     min={1}
+                    max={produk.find(p => p.id === item.id_produk)?.stok || 1}
                     value={item.jumlah}
                     onChange={(e) => handleJumlahChange(index, e.target.value)}
                   />
