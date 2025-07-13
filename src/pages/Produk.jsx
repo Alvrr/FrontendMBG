@@ -147,7 +147,7 @@ const Produk = () => {
 
       setModalOpen(false)
       fetchData()
-    } catch (err) {
+    } catch {
       Swal.fire("Gagal", "Terjadi kesalahan", "error")
     }
   }
@@ -182,7 +182,7 @@ const Produk = () => {
       })
 
       fetchData()
-    } catch (err) {
+    } catch {
       Swal.fire("Gagal", "Tidak bisa menghapus", "error")
     }
   }

@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import Swal from "sweetalert2";
 import { useNavigate } from 'react-router-dom';
+import { deletePembayaran } from "../services/pembayaranAPI";
 
 const Pembayaran = () => {
   const navigate = useNavigate([]);
@@ -245,12 +246,30 @@ const Pembayaran = () => {
     if (!confirm.isConfirmed) return;
 
     try {
-      // Di sini nantinya akan ada logic untuk memindahkan data ke riwayat
-      // Untuk sementara kita hanya tampilkan pesan sukses
+      // Ambil data riwayat yang sudah ada dari localStorage
+      const existingRiwayat = JSON.parse(localStorage.getItem('riwayatPembayaran')) || [];
+      
+      // Cari nama pelanggan
+      const pelangganDetail = pelanggan.find(p => p.id === item.id_pelanggan);
+      
+      // Tambahkan data pembayaran yang selesai ke riwayat
+      const newRiwayat = [...existingRiwayat, { 
+        ...item, 
+        nama_pelanggan: pelangganDetail?.nama || 'N/A',
+        status: 'selesai', 
+        tanggal_selesai: new Date().toISOString() 
+      }];
+      
+      // Simpan ke localStorage
+      localStorage.setItem('riwayatPembayaran', JSON.stringify(newRiwayat));
+      
+      // Hapus data dari database pembayaran
+      await deletePembayaran(item.id);
+
       await Swal.fire({
         icon: "success",
         title: "Pembayaran Selesai",
-        text: "Data pembayaran akan dipindahkan ke halaman riwayat",
+        text: "Data pembayaran telah dipindahkan ke halaman riwayat",
         confirmButtonText: "OK",
         customClass: {
           confirmButton: "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700",
@@ -332,30 +351,35 @@ const Pembayaran = () => {
           <tr>
             <th className="border px-4 py-2">ID</th>
             <th className="border px-4 py-2">Pelanggan</th>
-            <th className="border px-4 py-2">Tanggal</th>
+            <th className="border px-4 py-2">Nama Pelanggan</th>
+            <th className="border px-4 py-2">Tanggal Pembayaran</th>
             <th className="border px-4 py-2">Total Bayar</th>
             <th className="border px-4 py-2">Aksi</th>
           </tr>
         </thead>
         <tbody>
-          {paginatedData.map((item) => (
-            <tr key={item.id} className="text-center">
-              <td className="border px-4 py-2">{item.id}</td>
-              <td className="border px-4 py-2">{item.id_pelanggan}</td>
-              <td className="border px-4 py-2">
-                {format(new Date(item.tanggal), "dd MMMM yyyy HH:mm:ss", { locale: id })}
-              </td>
-              <td className="border px-4 py-2">{formatRupiah(item.total_bayar)}</td>
-              <td className="border px-4 py-2">
-                <button
-                  onClick={() => handleSelesai(item)}
-                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
-                >
-                  Selesai
-                </button>
-              </td>
-            </tr>
-          ))}
+          {paginatedData.map((item) => {
+            const pelangganDetail = pelanggan.find(p => p.id === item.id_pelanggan);
+            return (
+              <tr key={item.id} className="text-center">
+                <td className="border px-4 py-2">{item.id}</td>
+                <td className="border px-4 py-2">{item.id_pelanggan}</td>
+                <td className="border px-4 py-2">{pelangganDetail?.nama || 'N/A'}</td>
+                <td className="border px-4 py-2">
+                  {format(new Date(item.tanggal), "dd MMMM yyyy HH:mm:ss", { locale: id })}
+                </td>
+                <td className="border px-4 py-2">{formatRupiah(item.total_bayar)}</td>
+                <td className="border px-4 py-2">
+                  <button
+                    onClick={() => handleSelesai(item)}
+                    className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
+                  >
+                    Selesai
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 

@@ -6,6 +6,7 @@ import Produk from './pages/Produk'
 import Pelanggan from './pages/Pelanggan'
 import Pembayaran from './pages/Pembayaran'
 import Laporan from './pages/Laporan'
+import Riwayat from './pages/Riwayat'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/pelanggan" element={<Pelanggan />} />
           <Route path="/pembayaran" element={<Pembayaran />} />
           <Route path="/laporan" element={<Laporan />} />
+          <Route path="/riwayat" element={<Riwayat />} />
         </Route>
       </Routes>
     </Router>
