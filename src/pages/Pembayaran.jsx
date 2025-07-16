@@ -4,11 +4,12 @@ import axios from "axios";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import Swal from "sweetalert2";
-import { useNavigate } from 'react-router-dom';
 import { deletePembayaran } from "../services/pembayaranAPI";
+import PageWrapper from "../components/PageWrapper";
+import Card from "../components/Card";
+import { PlusIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 const Pembayaran = () => {
-  const navigate = useNavigate([]);
   const [pembayaran, setPembayaran] = useState([]);
   const [pelanggan, setPelanggan] = useState([]);
   const [produk, setProduk] = useState([]);
@@ -99,8 +100,11 @@ const Pembayaran = () => {
     const list = [...produkDipilih];
     const produkDetail = produk.find(p => p.id === list[index].id_produk);
     
+    // Pastikan jumlah minimal 1
+    const jumlahInt = Math.max(1, parseInt(jumlah) || 1);
+    
     // Validasi jika jumlah melebihi stok
-    if (produkDetail && parseInt(jumlah) > produkDetail.stok) {
+    if (produkDetail && jumlahInt > produkDetail.stok) {
       Swal.fire({
         icon: "warning",
         title: "Jumlah melebihi stok",
@@ -111,11 +115,16 @@ const Pembayaran = () => {
         },
         buttonsStyling: false,
       });
+      // Set jumlah ke stok maksimal yang tersedia
+      list[index].jumlah = produkDetail.stok;
+      list[index].subtotal = list[index].harga * produkDetail.stok;
+      setProdukDipilih(list);
+      updateTotalBayar(list);
       return;
     }
     
-    list[index].jumlah = parseInt(jumlah);
-    list[index].subtotal = list[index].harga * parseInt(jumlah);
+    list[index].jumlah = jumlahInt;
+    list[index].subtotal = list[index].harga * jumlahInt;
     setProdukDipilih(list);
     updateTotalBayar(list);
   };
@@ -126,11 +135,12 @@ const Pembayaran = () => {
   };
 
   const handleSubmit = async () => {
-    if (!form.id_pelanggan || produkDipilih.length === 0 || produkDipilih.some(p => !p.id_produk)) {
+    // Validasi data dasar
+    if (!form.id_pelanggan || produkDipilih.length === 0) {
       await Swal.fire({
         icon: "warning",
         title: "Data tidak lengkap",
-        text: "Semua field wajib diisi dan minimal 1 produk harus dipilih",
+        text: "Pelanggan harus dipilih dan minimal 1 produk harus ditambahkan",
         confirmButtonText: "OK",
         customClass: {
           confirmButton: "bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600",
@@ -140,10 +150,27 @@ const Pembayaran = () => {
       return;
     }
 
+    // Validasi produk yang dipilih
+    for (const item of produkDipilih) {
+      if (!item.id_produk) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Produk belum dipilih",
+          text: "Semua produk dalam daftar harus dipilih",
+          confirmButtonText: "OK",
+          customClass: {
+            confirmButton: "bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600",
+          },
+          buttonsStyling: false,
+        });
+        return;
+      }
+    }
+
     // Validasi stok produk
     for (const item of produkDipilih) {
       const produkDetail = produk.find(p => p.id === item.id_produk);
-      if (produkDetail && produkDetail.stok < item.jumlah) {
+      if (produkDetail && item.jumlah > produkDetail.stok) {
         await Swal.fire({
           icon: "error",
           title: "Stok tidak mencukupi",
@@ -179,17 +206,24 @@ const Pembayaran = () => {
         tanggal: new Date().toISOString(),
         produk: produkDipilih,
       };
-      await axios.post("http://localhost:5000/pembayaran", data);
+      
+      console.log('Data pembayaran yang akan disimpan:', data);
+      
+      const response = await axios.post("http://localhost:5000/pembayaran", data);
+      console.log('Response pembayaran:', response.data);
 
       // Update stok produk setelah pembayaran berhasil
       for (const item of produkDipilih) {
         const produkDetail = produk.find(p => p.id === item.id_produk);
         if (produkDetail) {
-          const stokBaru = produkDetail.stok - item.jumlah;
-          await axios.put(`http://localhost:5000/produk/${item.id_produk}`, {
+          const stokBaru = Math.max(0, produkDetail.stok - item.jumlah); // Pastikan stok tidak negatif
+          console.log(`Mengupdate stok ${produkDetail.nama_produk}: ${produkDetail.stok} -> ${stokBaru}`);
+          
+          const updateResponse = await axios.put(`http://localhost:5000/produk/${item.id_produk}`, {
             ...produkDetail,
             stok: stokBaru
           });
+          console.log('Response update stok:', updateResponse.data);
         }
       }
 
@@ -214,11 +248,12 @@ const Pembayaran = () => {
         total_bayar: 0,
       });
       setProdukDipilih([]);
-    } catch {
+    } catch (error) {
+      console.error('Error saat menyimpan pembayaran:', error);
       Swal.fire({
         icon: "error",
         title: "Gagal menyimpan",
-        text: "Terjadi kesalahan saat menyimpan data",
+        text: error.response?.data?.message || "Terjadi kesalahan saat menyimpan data",
         confirmButtonText: "OK",
         customClass: {
           confirmButton: "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700",
@@ -312,98 +347,108 @@ const Pembayaran = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-6">
-  {/* Header dengan tombol Kembali */}
-  <div className="relative flex justify-center items-center mb-6">
-    <h1 className="text-2xl font-bold text-center">Data Pembayaran</h1>
-    <button
-      onClick={() => navigate("/")}
-      className="absolute right-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500"
+    <PageWrapper 
+      title="Manajemen Pembayaran" 
+      description="Kelola data pembayaran bisnis Anda"
+      action={
+        <button
+          onClick={() => setShowPopup(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+        >
+          <PlusIcon className="w-5 h-5" />
+          <span>Transaksi Baru</span>
+        </button>
+      }
     >
-      Kembali
-    </button>
-  </div>
+      {/* Search Bar */}
+      <Card className="mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-1 max-w-md">
+            <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Cari ID Pembayaran..."
+              value={searchId}
+              onChange={(e) => {
+                setSearchId(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+            />
+          </div>
+        </div>
+      </Card>
 
-  {/* Tombol Tambah + Pencarian */}
-  <div className="flex flex-wrap gap-3 mb-4 items-center">
-    <button
-      onClick={() => setShowPopup(true)}
-      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
-    >
-      Tambah Pembayaran
-    </button>
-
-    <input
-      type="text"
-      placeholder="Cari ID Pembayaran..."
-      className="border px-3 py-2 rounded w-64"
-      value={searchId}
-      onChange={(e) => {
-        setSearchId(e.target.value);
-        setCurrentPage(1);
-      }}
-    />
-  </div>
+      {/* Table */}
+      <Card>
 
 
-      <table className="min-w-full table-auto border">
-        <thead className="bg-blue-600 text-white">
-          <tr>
-            <th className="border px-4 py-2">ID</th>
-            <th className="border px-4 py-2">Pelanggan</th>
-            <th className="border px-4 py-2">Nama Pelanggan</th>
-            <th className="border px-4 py-2">Tanggal Pembayaran</th>
-            <th className="border px-4 py-2">Total Bayar</th>
-            <th className="border px-4 py-2">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedData.map((item) => {
-            const pelangganDetail = pelanggan.find(p => p.id === item.id_pelanggan);
-            return (
-              <tr key={item.id} className="text-center">
-                <td className="border px-4 py-2">{item.id}</td>
-                <td className="border px-4 py-2">{item.id_pelanggan}</td>
-                <td className="border px-4 py-2">{pelangganDetail?.nama || 'N/A'}</td>
-                <td className="border px-4 py-2">
-                  {format(new Date(item.tanggal), "dd MMMM yyyy HH:mm:ss", { locale: id })}
-                </td>
-                <td className="border px-4 py-2">{formatRupiah(item.total_bayar)}</td>
-                <td className="border px-4 py-2">
-                  <button
-                    onClick={() => handleSelesai(item)}
-                    className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
-                  >
-                    Selesai
-                  </button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">PELANGGAN</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">NAMA PELANGGAN</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">TANGGAL PEMBAYARAN</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">TOTAL BAYAR</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">AKSI</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {paginatedData.map((item) => {
+                const pelangganDetail = pelanggan.find(p => p.id === item.id_pelanggan);
+                return (
+                  <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.id_pelanggan}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{pelangganDetail?.nama || 'N/A'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {format(new Date(item.tanggal), "dd MMMM yyyy HH:mm:ss", { locale: id })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatRupiah(item.total_bayar)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => handleSelesai(item)}
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm font-medium"
+                      >
+                        Selesai
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-      <div className="flex justify-center mt-4 gap-2">
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-          <button
-            key={page}
-            onClick={() => setCurrentPage(page)}
-            className={`px-3 py-1 border rounded ${page === currentPage ? "bg-blue-500 text-white" : "bg-white"}`}
-          >
-            {page}
-          </button>
-        ))}
-      </div>
+        {/* Pagination */}
+        <div className="flex justify-center mt-6 gap-2">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 border rounded-lg ${
+                page === currentPage 
+                  ? "bg-blue-600 text-white border-blue-600" 
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+        </div>
+      </Card>
 
       {showPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow w-full max-w-2xl">
-            <h2 className="text-xl font-bold mb-4">Tambah Pembayaran</h2>
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl mx-4">
+            <h2 className="text-xl font-bold mb-4 text-gray-900">Transaksi Baru</h2>
 
-            <div className="mb-2">
-              <label className="block">Pelanggan</label>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Pelanggan</label>
               <select
-                className="border p-2 w-full"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={form.id_pelanggan}
                 onChange={(e) => setForm({ ...form, id_pelanggan: e.target.value })}
               >
@@ -416,12 +461,12 @@ const Pembayaran = () => {
               </select>
             </div>
 
-            <div className="mb-2">
-              <label className="block mb-1">Daftar Produk</label>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Daftar Produk</label>
               {produkDipilih.map((item, index) => (
                 <div key={index} className="flex gap-2 mb-2 items-center">
                   <select
-                    className="border p-2 w-1/3 text-black bg-white"
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-1/3 text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={item.id_produk}
                     onChange={(e) => handleProdukChange(index, e.target.value)}
                   >
@@ -434,16 +479,16 @@ const Pembayaran = () => {
                   </select>
                   <input
                     type="number"
-                    className="border p-2 w-1/4"
-                    min={1}
-                    max={produk.find(p => p.id === item.id_produk)?.stok || 1}
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min="1"
                     value={item.jumlah}
                     onChange={(e) => handleJumlahChange(index, e.target.value)}
+                    placeholder="Qty"
                   />
-                  <span className="w-1/3">{formatRupiah(item.subtotal)}</span>
+                  <span className="w-1/3 text-sm font-medium">{formatRupiah(item.subtotal)}</span>
                   <button
                     onClick={() => handleRemoveProduk(index)}
-                    className="ml-2 text-red-600 hover:text-red-800"
+                    className="ml-2 text-red-600 hover:text-red-800 font-bold"
                     title="Hapus Produk"
                   >
                     ❌
@@ -452,35 +497,44 @@ const Pembayaran = () => {
               ))}
               <button
                 onClick={handleAddProduk}
-                className="text-sm bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded"
+                className="text-sm bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-medium"
               >
                 + Tambah Produk
               </button>
             </div>
 
-            <div className="mb-2">
-              <label className="block font-bold">Total Bayar:</label>
-              <div>{formatRupiah(form.total_bayar)}</div>
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Total Bayar:</label>
+              <div className="text-xl font-bold text-blue-600">{formatRupiah(form.total_bayar)}</div>
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-3">
               <button
-                onClick={() => setShowPopup(false)}
-                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded"
+                onClick={() => {
+                  setShowPopup(false);
+                  setForm({
+                    id_pelanggan: "",
+                    tanggal: new Date(),
+                    produk: [],
+                    total_bayar: 0,
+                  });
+                  setProdukDipilih([]);
+                }}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium"
               >
                 Batal
               </button>
               <button
                 onClick={handleSubmit}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
               >
-                Simpan
+                Proses Pembayaran
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </PageWrapper>
   );
 };
 

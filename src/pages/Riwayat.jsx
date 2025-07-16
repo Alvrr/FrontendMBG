@@ -1,222 +1,280 @@
-import React, { useEffect, useState } from "react";
-import { format } from "date-fns";
-import { id } from "date-fns/locale";
-import { useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
+import React, { useEffect, useState } from "react"
+import { format } from "date-fns"
+import { id } from "date-fns/locale"
+import Swal from 'sweetalert2'
+import PageWrapper from "../components/PageWrapper"
+import Card from "../components/Card"
+import { MagnifyingGlassIcon, DocumentArrowDownIcon, CalendarIcon, ShoppingCartIcon } from "@heroicons/react/24/outline"
 
 const Riwayat = () => {
-  const navigate = useNavigate();
-  const [riwayat, setRiwayat] = useState([]);
-  const [searchId, setSearchId] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [riwayat, setRiwayat] = useState([])
+  const [searchId, setSearchId] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
 
   useEffect(() => {
-    getRiwayat();
-  }, []);
+    getRiwayat()
+  }, [])
 
   const getRiwayat = async () => {
     try {
-      // Mengambil data riwayat dari localStorage
-      const riwayatData = JSON.parse(localStorage.getItem('riwayatPembayaran')) || [];
-      setRiwayat(riwayatData);
+      const riwayatData = JSON.parse(localStorage.getItem('riwayatPembayaran')) || []
+      setRiwayat(riwayatData)
     } catch (error) {
-      console.error("Error loading riwayat:", error);
-      setRiwayat([]);
+      console.error("Error loading riwayat:", error)
+      setRiwayat([])
     }
-  };
+  }
 
   const handleDownloadLaporan = async () => {
     const result = await Swal.fire({
-      title: "Apakah Anda ingin mengunduh laporan?",
+      title: "Unduh Laporan Riwayat",
       text: "File akan diunduh dalam format Excel.",
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Ya, unduh",
       cancelButtonText: "Batal",
-      buttonsStyling: false, 
-      didOpen: () => {
-        const confirmBtn = Swal.getConfirmButton();
-        const cancelBtn = Swal.getCancelButton();
+      customClass: {
+        confirmButton: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700",
+        cancelButton: "bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500",
+      },
+      buttonsStyling: false,
+    })
 
-        confirmBtn.classList.add(
-          "bg-blue-600",
-          "text-white",
-          "px-4",
-          "py-2",
-          "rounded",
-          "hover:bg-blue-700"
-        );
-
-        cancelBtn.classList.add(
-          "bg-gray-400",
-          "text-white",
-          "px-4",
-          "py-2",
-          "rounded",
-          "hover:bg-gray-500"
-        );
+    if (result.isConfirmed) {
+      try {
+        const csvContent = generateCSVContent()
+        downloadCSV(csvContent, 'riwayat-pembayaran.csv')
+        
+        Swal.fire({
+          icon: "success",
+          title: "Laporan berhasil diunduh!",
+          confirmButtonText: "OK",
+          customClass: {
+            confirmButton: "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700",
+          },
+          buttonsStyling: false,
+        })
+      } catch {
+        Swal.fire("Error", "Gagal mengunduh laporan", "error")
       }
-    });
-
-    if (!result.isConfirmed) return;
-
-    try {
-      const response = await fetch("http://127.0.0.1:5000/laporan/export/excel");
-      if (!response.ok) throw new Error("Gagal mengunduh laporan.");
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "laporan.xlsx";
-      a.click();
-      window.URL.revokeObjectURL(url);
-
-      Swal.fire({
-        title: "Berhasil!",
-        text: "Laporan berhasil diunduh.",
-        icon: "success",
-        confirmButtonText: "OK",
-        buttonsStyling: false,
-        didOpen: () => {
-          Swal.getConfirmButton().classList.add(
-            "bg-green-600",
-            "text-white",
-            "px-4",
-            "py-2",
-            "rounded",
-            "hover:bg-green-700"
-          );
-        }
-      });
-    } catch (error) {
-      Swal.fire({
-        title: "Gagal",
-        text: error.message,
-        icon: "error",
-        confirmButtonText: "OK",
-        buttonsStyling: false,
-        didOpen: () => {
-          Swal.getConfirmButton().classList.add(
-            "bg-red-600",
-            "text-white",
-            "px-4",
-            "py-2",
-            "rounded",
-            "hover:bg-red-700"
-          );
-        }
-      });
     }
-  };
+  }
 
-  const formatRupiah = (angka) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-    }).format(angka);
-  };
+  const generateCSVContent = () => {
+    const headers = ['ID', 'Tanggal', 'Pelanggan', 'Produk', 'Total Bayar']
+    const csvRows = [headers.join(',')]
 
-  const filteredRiwayat = riwayat.filter((item) =>
-    item.id.toLowerCase().includes(searchId.toLowerCase())
-  );
-  const dataToDisplay = searchId ? filteredRiwayat : riwayat;
+    riwayat.forEach(item => {
+      const produkList = item.produk?.map(p => `${p.nama_produk}(${p.jumlah})`).join('; ') || 'N/A'
+      const row = [
+        item.id,
+        format(new Date(item.tanggal), "dd/MM/yyyy"),
+        item.nama_pelanggan || 'N/A',
+        `"${produkList}"`,
+        item.total_bayar || 0
+      ]
+      csvRows.push(row.join(','))
+    })
 
-  const totalPages = Math.ceil(dataToDisplay.length / itemsPerPage);
-  const paginatedData = dataToDisplay.slice(
+    return csvRows.join('\\n')
+  }
+
+  const downloadCSV = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', filename)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    }
+  }
+
+  const filteredData = riwayat.filter((item) =>
+    searchId === "" || item.id.toString().includes(searchId)
+  )
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage)
+  const paginatedData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
-  );
+  )
+
+  const changePage = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return
+    setCurrentPage(newPage)
+  }
+
+  // const totalTransaksi = riwayat.length
+  // const totalPendapatan = riwayat.reduce((sum, item) => sum + (item.total_bayar || 0), 0)
+  // const rataRataTransaksi = totalTransaksi > 0 ? totalPendapatan / totalTransaksi : 0
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-6">
-      {/* Header dengan tombol Kembali */}
-      <div className="relative flex justify-center items-center mb-6">
-        <h1 className="text-2xl font-bold text-center">Riwayat Pembayaran</h1>
-        <button
-          onClick={() => navigate("/")}
-          className="absolute right-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500"
-        >
-          Kembali
-        </button>
-      </div>
-
-      {/* Pencarian dan Export Laporan */}
-      <div className="flex flex-wrap gap-3 mb-4 items-center">
+    <PageWrapper 
+      title="Riwayat Transaksi" 
+      description="Lihat dan unduh riwayat semua transaksi pembayaran"
+      action={
         <button
           onClick={handleDownloadLaporan}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded font-semibold transition"
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
         >
-          Export Laporan
+          <DocumentArrowDownIcon className="w-5 h-5" />
+          <span>Unduh Laporan</span>
         </button>
-        <input
-          type="text"
-          placeholder="Cari ID Pembayaran..."
-          className="border px-3 py-2 rounded w-64"
-          value={searchId}
-          onChange={(e) => {
-            setSearchId(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-      </div>
+      }
+    >
+      {/* Stats Cards
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card>
+          <div className="flex items-center">
+            <div className="p-3 rounded-lg bg-blue-100">
+              <ShoppingCartIcon className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Transaksi</p>
+              <p className="text-2xl font-semibold text-gray-900">{totalTransaksi}</p>
+            </div>
+          </div>
+        </Card>
 
-      {/* Tabel Riwayat */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white rounded shadow">
-          <thead className="bg-green-600 text-white">
-            <tr>
-              <th className="border px-4 py-2">ID</th>
-              <th className="border px-4 py-2">Pelanggan</th>
-              <th className="border px-4 py-2">Nama Pelanggan</th>
-              <th className="border px-4 py-2">Tanggal Pembayaran</th>
-              <th className="border px-4 py-2">Total Bayar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedData.length > 0 ? (
-              paginatedData.map((item) => (
-                <tr key={item.id} className="text-center">
-                  <td className="border px-4 py-2">{item.id}</td>
-                  <td className="border px-4 py-2">{item.id_pelanggan}</td>
-                  <td className="border px-4 py-2">{item.nama_pelanggan || 'N/A'}</td>
-                  <td className="border px-4 py-2">
-                    {format(new Date(item.tanggal), "dd MMMM yyyy HH:mm:ss", { locale: id })}
-                  </td>
-                  <td className="border px-4 py-2">{formatRupiah(item.total_bayar)}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="border px-4 py-8 text-center text-gray-500">
-                  Belum ada riwayat pembayaran yang selesai
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+        <Card>
+          <div className="flex items-center">
+            <div className="p-3 rounded-lg bg-green-100">
+              <DocumentArrowDownIcon className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Pendapatan</p>
+              <p className="text-2xl font-semibold text-gray-900">Rp {totalPendapatan.toLocaleString('id-ID')}</p>
+            </div>
+          </div>
+        </Card>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center mt-4 gap-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 border rounded ${
-                page === currentPage ? "bg-green-500 text-white" : "bg-white"
-              }`}
-            >
-              {page}
-            </button>
-          ))}
+        <Card>
+          <div className="flex items-center">
+            <div className="p-3 rounded-lg bg-purple-100">
+              <CalendarIcon className="w-6 h-6 text-purple-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Rata-rata per Transaksi</p>
+              <p className="text-2xl font-semibold text-gray-900">Rp {Math.round(rataRataTransaksi).toLocaleString('id-ID')}</p>
+            </div>
+          </div>
+        </Card>
+      </div> */}
+
+      {/* Search Bar */}
+      <Card className="mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-1 max-w-md">
+            <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Cari berdasarkan ID transaksi..."
+              value={searchId}
+              onChange={(e) => {
+                setSearchId(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+            />
+          </div>
         </div>
-      )}
-    </div>
-  );
-};
+      </Card>
 
-export default Riwayat;
+      {/* Table */}
+      <Card>
+        {riwayat.length === 0 ? (
+          <div className="text-center py-12">
+            <ShoppingCartIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Belum Ada Riwayat Transaksi</h3>
+            <p className="text-gray-500">Riwayat transaksi akan muncul di sini setelah ada pembayaran yang berhasil diproses.</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pelanggan</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paginatedData.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {format(new Date(item.tanggal), "dd MMMM yyyy", { locale: id })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.nama_pelanggan || 'N/A'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        <div className="space-y-1">
+                          {item.produk?.map((produk, index) => (
+                            <div key={index} className="text-xs">
+                              {produk.nama_produk} ({produk.jumlah}x)
+                            </div>
+                          )) || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                        Rp {(item.total_bayar || 0).toLocaleString('id-ID')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          Selesai
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-6 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => changePage(currentPage - 1)}
+                  className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => changePage(i + 1)}
+                    className={`px-3 py-2 text-sm rounded-lg ${
+                      currentPage === i + 1
+                        ? "bg-blue-600 text-white"
+                        : "bg-white border border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  onClick={() => changePage(currentPage + 1)}
+                  className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+    </PageWrapper>
+  )
+}
+
+export default Riwayat

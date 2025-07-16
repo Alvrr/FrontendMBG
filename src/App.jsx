@@ -1,7 +1,7 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import MainWrapper from './components/MainWrapper'
-import Dashboard from './pages/Dashboard'
+import AdminLayout from './components/AdminLayout'
+import ModernDashboard from './pages/ModernDashboard'
 import Produk from './pages/Produk'
 import Pelanggan from './pages/Pelanggan'
 import Pembayaran from './pages/Pembayaran'
@@ -12,11 +12,9 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Dashboard tanpa navbar */}
-        <Route path="/" element={<Dashboard />} />
-
-        {/* Halaman lain pakai navbar (MainWrapper) */}
-        <Route element={<MainWrapper />}>
+        {/* Semua halaman menggunakan AdminLayout */}
+        <Route element={<AdminLayout />}>
+          <Route path="/" element={<ModernDashboard />} />
           <Route path="/produk" element={<Produk />} />
           <Route path="/pelanggan" element={<Pelanggan />} />
           <Route path="/pembayaran" element={<Pembayaran />} />
