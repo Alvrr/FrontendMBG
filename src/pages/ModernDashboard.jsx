@@ -12,6 +12,8 @@ import {
   UsersIcon,
   BanknotesIcon
 } from '@heroicons/react/24/outline'
+import { logoutService } from '../services/authAPI';
+import Swal from "sweetalert2";
 
 const ModernDashboard = () => {
   const navigate = useNavigate()
@@ -74,6 +76,33 @@ const ModernDashboard = () => {
     } catch (error) {
       console.error("Error fetching stats:", error)
     }
+  }
+
+  const handleLogout = async () => {
+    const confirm = await Swal.fire({
+      title: 'Yakin ingin logout?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Logout',
+      cancelButtonText: 'Batal',
+      customClass: {
+        confirmButton: 'bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700',
+        cancelButton: 'bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500',
+      },
+      buttonsStyling: false,
+    });
+    if (!confirm.isConfirmed) return;
+    logoutService();
+    await Swal.fire({
+      icon: "success",
+      title: "Logout berhasil",
+      confirmButtonText: "OK",
+      customClass: {
+        confirmButton: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      },
+      buttonsStyling: false
+    });
+    navigate('/login');
   }
 
   const menuCards = [
@@ -156,10 +185,12 @@ const ModernDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-        <p className="text-gray-600">Selamat datang di sistem manajemen bisnis mikro</p>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+          <p className="text-gray-600">Selamat datang di sistem manajemen bisnis mikro</p>
+        </div>
+        <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">Logout</button>
       </div>
 
       {/* Stats Cards */}

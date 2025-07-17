@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { registerService } from "../services/authAPI";
 import { useNavigate, Link } from "react-router-dom";
+import Swal from "sweetalert2";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -23,9 +24,28 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await registerService(form);
+      await Swal.fire({
+        icon: "success",
+        title: "Registrasi berhasil",
+        confirmButtonText: "OK",
+        customClass: {
+          confirmButton: "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        },
+        buttonsStyling: false
+      });
       navigate("/login"); // redirect ke login setelah register
     } catch (err) {
       setError(err.message || "Registrasi gagal");
+      await Swal.fire({
+        icon: "error",
+        title: "Registrasi gagal",
+        text: err.message || "Registrasi gagal",
+        confirmButtonText: "OK",
+        customClass: {
+          confirmButton: "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+        },
+        buttonsStyling: false
+      });
     } finally {
       setLoading(false);
     }
@@ -78,7 +98,8 @@ export default function RegisterPage() {
             onChange={handleChange}
           >
             <option value="admin">Admin</option>
-            <option value="user">User</option>
+            <option value="kasir">Kasir</option>
+            <option value="driver">Driver</option>
           </select>
         </div>
         <button
