@@ -5,7 +5,13 @@ import {
   updatePelanggan,
   deletePelanggan,
 } from "../services/pelangganAPI"
-import Swal from "sweetalert2"
+import { 
+  showSuccessAlert, 
+  showErrorAlert, 
+  showDeleteConfirmAlert,
+  showWarningAlert,
+  showConfirmAlert 
+} from "../utils/alertUtils"
 import PageWrapper from "../components/PageWrapper"
 import Card from "../components/Card"
 import { PlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline"
@@ -43,11 +49,10 @@ const Pelanggan = () => {
 
   const openModal = (item = null) => {
     if (user.role === "driver") {
-      Swal.fire({
-        icon: "warning",
-        title: "Akses Ditolak",
-        text: "Role anda dibatasi untuk aksi ini",
-      })
+      showWarningAlert(
+        "Akses Ditolak",
+        "Role anda dibatasi untuk aksi ini"
+      )
       return
     }
     if (item) {
@@ -75,11 +80,10 @@ const Pelanggan = () => {
 
   const handleSubmit = async (e) => {
     if (user.role === "driver") {
-      Swal.fire({
-        icon: "warning",
-        title: "Akses Ditolak",
-        text: "Role anda dibatasi untuk aksi ini",
-      })
+      showWarningAlert(
+        "Akses Ditolak",
+        "Role anda dibatasi untuk aksi ini"
+      )
       return
     }
     e.preventDefault()
@@ -87,13 +91,13 @@ const Pelanggan = () => {
     // Validasi email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(form.email)) {
-      Swal.fire("Gagal", "Format email tidak valid", "error")
+      showErrorAlert("Gagal", "Format email tidak valid")
       return
     }
 
     // Validasi no HP (minimal 10 digit)
     if (form.no_hp.length < 10) {
-      Swal.fire("Gagal", "Nomor HP minimal 10 digit", "error")
+      showErrorAlert("Gagal", "Nomor HP minimal 10 digit")
       return
     }
 
@@ -105,92 +109,52 @@ const Pelanggan = () => {
       alamat: form.alamat,
     }
 
-    const confirm = await Swal.fire({
-      title: isEdit ? "Yakin akan mengedit data?" : "Yakin akan menambahkan data?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Ya, simpan",
-      cancelButtonText: "Batal",
-      customClass: {
-        confirmButton: `${isEdit ? "bg-blue-600" : "bg-green-600"} text-white px-4 py-2 rounded hover:${isEdit ? "bg-blue-700" : "bg-green-700"}`,
-        cancelButton: "bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500",
-      },
-      buttonsStyling: false,
-    })
+    const confirm = await showConfirmAlert(
+      isEdit ? "Yakin akan mengedit data?" : "Yakin akan menambahkan data?",
+      "",
+      "Ya, simpan",
+      "Batal"
+    )
 
     if (!confirm.isConfirmed) return
 
     try {
       if (isEdit) {
         await updatePelanggan(selectedId, payload)
-        await Swal.fire({
-          icon: "success",
-          title: "Pelanggan berhasil diperbarui",
-          confirmButtonText: "OK",
-          customClass: {
-            confirmButton: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700",
-          },
-          buttonsStyling: false,
-        })
+        await showSuccessAlert("Pelanggan berhasil diperbarui")
       } else {
         await createPelanggan(payload)
-        await Swal.fire({
-          icon: "success",
-          title: "Pelanggan berhasil ditambahkan",
-          confirmButtonText: "OK",
-          customClass: {
-            confirmButton: "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700",
-          },
-          buttonsStyling: false,
-        })
+        await showSuccessAlert("Pelanggan berhasil ditambahkan")
       }
 
       setModalOpen(false)
       fetchData()
     } catch {
-      Swal.fire("Gagal", "Terjadi kesalahan", "error")
+      showErrorAlert("Gagal", "Terjadi kesalahan")
     }
   }
 
   const handleDelete = async (id) => {
     if (user.role === "driver") {
-      Swal.fire({
-        icon: "warning",
-        title: "Akses Ditolak",
-        text: "Role anda dibatasi untuk aksi ini",
-      })
+      showWarningAlert(
+        "Akses Ditolak",
+        "Role anda dibatasi untuk aksi ini"
+      )
       return
     }
-    const confirm = await Swal.fire({
-      title: "Yakin akan menghapus data ini?",
-      text: "Data yang dihapus tidak dapat dikembalikan!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Ya, hapus",
-      cancelButtonText: "Batal",
-      customClass: {
-        confirmButton: "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700",
-        cancelButton: "bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500",
-      },
-      buttonsStyling: false,
-    })
+    const confirm = await showDeleteConfirmAlert(
+      "Yakin akan menghapus data ini?",
+      "Data yang dihapus tidak dapat dikembalikan!"
+    )
 
     if (!confirm.isConfirmed) return
 
     try {
       await deletePelanggan(id)
-      await Swal.fire({
-        icon: "success",
-        title: "Pelanggan berhasil dihapus",
-        confirmButtonText: "OK",
-        customClass: {
-          confirmButton: "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700",
-        },
-        buttonsStyling: false,
-      })
+      await showSuccessAlert("Pelanggan berhasil dihapus")
       fetchData()
     } catch {
-      Swal.fire("Gagal", "Terjadi kesalahan saat menghapus data", "error")
+      showErrorAlert("Gagal", "Terjadi kesalahan saat menghapus data")
     }
   }
 

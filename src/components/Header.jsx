@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { decodeJWT } from '../utils/jwtDecode'
 import { logoutService } from '../services/authAPI'
-import Swal from 'sweetalert2'
+import { showLogoutConfirmAlert, showTimedSuccessAlert, showErrorAlert } from '../utils/alertUtils'
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const [userRole, setUserRole] = useState('')
@@ -78,34 +78,21 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   // Handle logout
   const handleLogout = async () => {
     try {
-      const result = await Swal.fire({
-        title: 'Konfirmasi Logout',
-        text: 'Apakah Anda yakin ingin keluar?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Ya, Logout',
-        cancelButtonText: 'Batal'
-      })
+      const result = await showLogoutConfirmAlert()
 
       if (result.isConfirmed) {
         logoutService()
-        await Swal.fire({
-          icon: 'success',
-          title: 'Logout berhasil',
-          text: 'Anda telah berhasil keluar',
-          timer: 1500,
-          showConfirmButton: false
-        })
+        await showTimedSuccessAlert(
+          'Logout berhasil',
+          'Anda telah berhasil keluar'
+        )
         navigate('/login')
       }
     } catch {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Terjadi kesalahan saat logout'
-      })
+      await showErrorAlert(
+        'Error',
+        'Terjadi kesalahan saat logout'
+      )
     }
   }
 

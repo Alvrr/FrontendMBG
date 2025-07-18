@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { getAllKaryawan, createKaryawan, updateKaryawan, deleteKaryawan, toggleKaryawanStatus } from '../services/karyawanAPI';
-import Swal from 'sweetalert2';
+import { 
+  showSuccessAlert, 
+  showErrorAlert, 
+  showDeleteConfirmAlert,
+  showConfirmAlert,
+  showWarningAlert
+} from '../utils/alertUtils';
 import { UserPlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, UserGroupIcon, ShieldCheckIcon, TruckIcon, FunnelIcon } from '@heroicons/react/24/outline';
 
 const DataKaryawan = () => {
@@ -12,7 +18,6 @@ const DataKaryawan = () => {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [currentUser, setCurrentUser] = useState({ role: '', id: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState({
     nama: '',
@@ -30,15 +35,10 @@ const DataKaryawan = () => {
     // Check user authentication and role
     const token = localStorage.getItem('token');
     if (!token) {
-      Swal.fire({
-        title: 'Akses Ditolak',
-        text: 'Anda harus login terlebih dahulu',
-        icon: 'error',
-        confirmButtonColor: '#dc2626',
-        confirmButtonText: 'Login Sekarang',
-        background: '#fff',
-        color: '#374151'
-      }).then(() => {
+      showErrorAlert(
+        'Akses Ditolak',
+        'Anda harus login terlebih dahulu'
+      ).then(() => {
         window.location.href = '/login';
       });
       return;
@@ -46,18 +46,12 @@ const DataKaryawan = () => {
 
     try {
       const userData = JSON.parse(atob(token.split('.')[1]));
-      setCurrentUser({ role: userData.role, id: userData.id });
       
       if (userData.role !== 'admin') {
-        Swal.fire({
-          title: 'Akses Ditolak',
-          text: 'Hanya admin yang dapat mengakses halaman ini',
-          icon: 'error',
-          confirmButtonColor: '#dc2626',
-          confirmButtonText: 'Kembali',
-          background: '#fff',
-          color: '#374151'
-        }).then(() => {
+        showErrorAlert(
+          'Akses Ditolak',
+          'Hanya admin yang dapat mengakses halaman ini'
+        ).then(() => {
           window.location.href = '/dashboard';
         });
         return;
@@ -83,15 +77,10 @@ const DataKaryawan = () => {
       setKaryawan(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error:', err);
-      Swal.fire({
-        title: 'Error',
-        text: err?.response?.data?.message || 'Gagal memuat data karyawan',
-        icon: 'error',
-        confirmButtonColor: '#dc2626',
-        confirmButtonText: 'Tutup',
-        background: '#fff',
-        color: '#374151'
-      });
+      showErrorAlert(
+        'Error',
+        err?.response?.data?.message || 'Gagal memuat data karyawan'
+      );
     }
     setLoading(false);
   };
@@ -140,55 +129,35 @@ const DataKaryawan = () => {
 
   const validateForm = () => {
     if (!formData.nama || formData.nama.length < 2) {
-      Swal.fire({
-        title: 'Validasi Error',
-        text: 'Nama minimal 2 karakter',
-        icon: 'warning',
-        confirmButtonColor: '#f59e0b',
-        confirmButtonText: 'Perbaiki',
-        background: '#fff',
-        color: '#374151'
-      });
+      showWarningAlert(
+        'Validasi Error',
+        'Nama minimal 2 karakter'
+      );
       return false;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email || !emailRegex.test(formData.email)) {
-      Swal.fire({
-        title: 'Validasi Error',
-        text: 'Email tidak valid',
-        icon: 'warning',
-        confirmButtonColor: '#f59e0b',
-        confirmButtonText: 'Perbaiki',
-        background: '#fff',
-        color: '#374151'
-      });
+      showWarningAlert(
+        'Validasi Error',
+        'Email tidak valid'
+      );
       return false;
     }
 
     if (modalMode === 'create' && (!formData.password || formData.password.length < 6)) {
-      Swal.fire({
-        title: 'Validasi Error',
-        text: 'Password minimal 6 karakter',
-        icon: 'warning',
-        confirmButtonColor: '#f59e0b',
-        confirmButtonText: 'Perbaiki',
-        background: '#fff',
-        color: '#374151'
-      });
+      showWarningAlert(
+        'Validasi Error',
+        'Password minimal 6 karakter'
+      );
       return false;
     }
 
     if (modalMode === 'edit' && formData.password && formData.password.length < 6) {
-      Swal.fire({
-        title: 'Validasi Error',
-        text: 'Password minimal 6 karakter',
-        icon: 'warning',
-        confirmButtonColor: '#f59e0b',
-        confirmButtonText: 'Perbaiki',
-        background: '#fff',
-        color: '#374151'
-      });
+      showWarningAlert(
+        'Validasi Error',
+        'Password minimal 6 karakter'
+      );
       return false;
     }
 
@@ -208,119 +177,74 @@ const DataKaryawan = () => {
 
       if (modalMode === 'create') {
         await createKaryawan(submitData);
-        Swal.fire({
-          title: 'Sukses',
-          text: 'Karyawan berhasil ditambah',
-          icon: 'success',
-          confirmButtonColor: '#059669',
-          confirmButtonText: 'Lanjutkan',
-          background: '#fff',
-          color: '#374151'
-        });
+        showSuccessAlert(
+          'Sukses',
+          'Karyawan berhasil ditambah'
+        );
       } else if (modalMode === 'edit' && selectedKaryawan) {
         console.log('Updating karyawan with ID:', selectedKaryawan.id); // Debug log
         console.log('Update data:', submitData); // Debug log
         await updateKaryawan(selectedKaryawan.id, submitData);
-        Swal.fire({
-          title: 'Sukses',
-          text: 'Karyawan berhasil diupdate',
-          icon: 'success',
-          confirmButtonColor: '#059669',
-          confirmButtonText: 'Lanjutkan',
-          background: '#fff',
-          color: '#374151'
-        });
+        showSuccessAlert(
+          'Sukses',
+          'Karyawan berhasil diupdate'
+        );
       }
       fetchKaryawan();
       handleCloseModal();
     } catch (err) {
-      Swal.fire({
-        title: 'Error',
-        text: err?.response?.data?.message || 'Gagal simpan data',
-        icon: 'error',
-        confirmButtonColor: '#dc2626',
-        confirmButtonText: 'Tutup',
-        background: '#fff',
-        color: '#374151'
-      });
+      showErrorAlert(
+        'Error',
+        err?.response?.data?.message || 'Gagal simpan data'
+      );
     }
   };
 
   const handleDelete = async (id) => {
     console.log('Deleting karyawan with ID:', id); // Debug log
-    const confirm = await Swal.fire({
-      title: 'Konfirmasi Hapus',
-      text: 'Yakin ingin menghapus karyawan ini?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Ya, Hapus',
-      cancelButtonText: 'Batal'
-    });
+    const confirm = await showDeleteConfirmAlert(
+      'Konfirmasi Hapus',
+      'Yakin ingin menghapus karyawan ini?'
+    );
     if (!confirm.isConfirmed) return;
     
     try {
       await deleteKaryawan(id);
-      Swal.fire({
-        title: 'Sukses',
-        text: 'Karyawan berhasil dihapus',
-        icon: 'success',
-        confirmButtonColor: '#059669',
-        confirmButtonText: 'Lanjutkan',
-        background: '#fff',
-        color: '#374151'
-      });
+      showSuccessAlert(
+        'Sukses',
+        'Karyawan berhasil dihapus'
+      );
       fetchKaryawan();
     } catch (err) {
-      Swal.fire({
-        title: 'Error',
-        text: err?.response?.data?.message || 'Gagal hapus data',
-        icon: 'error',
-        confirmButtonColor: '#dc2626',
-        confirmButtonText: 'Tutup',
-        background: '#fff',
-        color: '#374151'
-      });
+      showErrorAlert(
+        'Error',
+        err?.response?.data?.message || 'Gagal hapus data'
+      );
     }
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'aktif' ? 'nonaktif' : 'aktif';
-    const confirm = await Swal.fire({
-      title: 'Konfirmasi Ubah Status',
-      text: `Yakin ingin ${newStatus === 'aktif' ? 'mengaktifkan' : 'menonaktifkan'} karyawan ini?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#2563eb',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Ya, Ubah',
-      cancelButtonText: 'Batal'
-    });
+    const confirm = await showConfirmAlert(
+      'Konfirmasi Ubah Status',
+      `Yakin ingin ${newStatus === 'aktif' ? 'mengaktifkan' : 'menonaktifkan'} karyawan ini?`,
+      'Ya, Ubah',
+      'Batal'
+    );
     if (!confirm.isConfirmed) return;
     
     try {
       await toggleKaryawanStatus(id, newStatus);
-      Swal.fire({
-        title: 'Sukses',
-        text: 'Status karyawan berhasil diubah',
-        icon: 'success',
-        confirmButtonColor: '#059669',
-        confirmButtonText: 'Lanjutkan',
-        background: '#fff',
-        color: '#374151'
-      });
+      showSuccessAlert(
+        'Sukses',
+        'Status karyawan berhasil diubah'
+      );
       fetchKaryawan();
     } catch (err) {
-      Swal.fire({
-        title: 'Error',
-        text: err?.response?.data?.message || 'Gagal ubah status',
-        icon: 'error',
-        confirmButtonColor: '#dc2626',
-        confirmButtonText: 'Tutup',
-        background: '#fff',
-        color: '#374151'
-      });
+      showErrorAlert(
+        'Error',
+        err?.response?.data?.message || 'Gagal ubah status'
+      );
     }
   };
 

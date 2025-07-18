@@ -6,10 +6,9 @@ import {
   formatActivityTime
 } from '../utils/activityUtils';
 import { useActivityLog } from '../hooks/useActivityLog';
-import { decodeJWT } from '../utils/jwtDecode';
 import PageWrapper from '../components/PageWrapper';
 import Card from '../components/Card';
-import Swal from 'sweetalert2';
+import { showErrorAlert, showTimedSuccessAlert } from '../utils/alertUtils';
 import { 
   ClockIcon, 
   FunnelIcon, 
@@ -20,8 +19,6 @@ import {
 } from '@heroicons/react/24/outline';
 
 const ActivityLog = () => {
-  const [user, setUser] = useState({ role: '', id: '' });
-  
   // Filter states
   const [filterType, setFilterType] = useState('all');
   const [filterDate, setFilterDate] = useState('');
@@ -44,10 +41,7 @@ const ActivityLog = () => {
   });
 
   useEffect(() => {
-    // Check user role
-    const token = localStorage.getItem('token');
-    const decoded = decodeJWT(token);
-    setUser({ role: decoded?.role || '', id: decoded?.id || '' });
+    // User role check completed in parent component
   }, []);
 
   // Filter activities
@@ -101,19 +95,16 @@ const ActivityLog = () => {
   const refreshActivities = async () => {
     try {
       await refresh();
-      Swal.fire({
-        icon: 'success',
-        title: 'Berhasil',
-        text: 'Aktivitas telah diperbarui',
-        timer: 1500,
-        showConfirmButton: false
-      });
-    } catch (err) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Gagal memperbarui aktivitas'
-      });
+      showTimedSuccessAlert(
+        'Berhasil',
+        'Aktivitas telah diperbarui',
+        1500
+      );
+    } catch {
+      showErrorAlert(
+        'Error',
+        'Gagal memperbarui aktivitas'
+      );
     }
   };
 

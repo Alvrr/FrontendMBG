@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { loginService } from "../services/authAPI";
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
+import { showSuccessAlert, showErrorAlert } from "../utils/alertUtils";
 
 export default function LoginPage({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -17,28 +17,14 @@ export default function LoginPage({ onLogin }) {
     try {
       const res = await loginService({ email, password });
       if (onLogin) onLogin(res);
-      await Swal.fire({
-        icon: "success",
-        title: "Login berhasil",
-        confirmButtonText: "OK",
-        customClass: {
-          confirmButton: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        },
-        buttonsStyling: false
-      });
+      await showSuccessAlert("Login berhasil");
       navigate("/dashboard"); // redirect ke dashboard
     } catch (err) {
       setError(err.message || "Login gagal");
-      await Swal.fire({
-        icon: "error",
-        title: "Login gagal",
-        text: err.message || "Login gagal",
-        confirmButtonText: "OK",
-        customClass: {
-          confirmButton: "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-        },
-        buttonsStyling: false
-      });
+      await showErrorAlert(
+        "Login gagal",
+        err.message || "Login gagal"
+      );
     } finally {
       setLoading(false);
     }
