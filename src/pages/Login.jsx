@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { loginService } from "../services/authAPI";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 export default function LoginPage({ onLogin }) {
@@ -76,10 +76,6 @@ export default function LoginPage({ onLogin }) {
         >
           {loading ? "Loading..." : "Login"}
         </button>
-        <div className="mt-4 text-center">
-          <span>Belum punya akun? </span>
-          <Link to="/register" className="text-blue-600 hover:underline">Register</Link>
-        </div>
       </form>
     </div>
   );

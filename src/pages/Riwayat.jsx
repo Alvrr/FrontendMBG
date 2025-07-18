@@ -5,6 +5,7 @@ import Swal from 'sweetalert2'
 import { decodeJWT } from "../utils/jwtDecode"
 import { getAllPembayaran } from "../services/pembayaranAPI"
 import { getAllPelanggan } from "../services/pelangganAPI"
+import axiosInstance from "../services/axiosInstance"
 import PageWrapper from "../components/PageWrapper"
 import Card from "../components/Card"
 import { MagnifyingGlassIcon, DocumentArrowDownIcon, CalendarIcon, ShoppingCartIcon } from "@heroicons/react/24/outline"
@@ -29,13 +30,12 @@ const Riwayat = () => {
 
   const getRiwayat = async () => {
     try {
-      const data = await getAllPembayaran()
-      // Filter hanya transaksi yang statusnya "Selesai"
-      const transaksiSelesai = Array.isArray(data) ? data.filter(item => item && item.status === 'Selesai') : []
-      setRiwayat(transaksiSelesai)
+      // Gunakan endpoint /riwayat yang sudah ada filter untuk driver
+      const response = await axiosInstance.get('/riwayat');
+      setRiwayat(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
-      console.error("Error loading riwayat:", error)
-      setRiwayat([])
+      console.error("Error loading riwayat:", error);
+      setRiwayat([]);
     }
   }
 

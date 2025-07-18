@@ -29,6 +29,7 @@ const Pelanggan = () => {
 
   const fetchData = async () => {
     const data = await getAllPelanggan()
+    console.log('Fetched pelanggan data:', data); // Debug log
     setPelanggan(data)
   }
 

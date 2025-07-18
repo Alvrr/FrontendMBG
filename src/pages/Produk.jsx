@@ -30,6 +30,7 @@ const Produk = () => {
 
   const fetchData = async () => {
     const data = await getAllProduk()
+    console.log('Fetched produk data:', data); // Debug log
     setProduk(data)
   }
 

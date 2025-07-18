@@ -32,19 +32,19 @@ const Sidebar = ({ isOpen }) => {
       name: 'Produk',
       path: '/produk',
       icon: CubeIcon,
-      roles: ['admin', 'kasir']
+      roles: ['admin', 'kasir', 'driver'] // Driver bisa lihat produk (read-only)
     },
     {
       name: 'Pelanggan',
       path: '/pelanggan',
       icon: UserGroupIcon,
-      roles: ['admin', 'kasir']
+      roles: ['admin', 'kasir', 'driver'] // Driver bisa lihat pelanggan (read-only)
     },
     {
       name: 'Pembayaran',
       path: '/pembayaran',
       icon: CreditCardIcon,
-      roles: ['admin', 'kasir']
+      roles: ['admin', 'kasir', 'driver'] // Driver bisa lihat pembayaran miliknya
     },
     {
       name: 'Riwayat',

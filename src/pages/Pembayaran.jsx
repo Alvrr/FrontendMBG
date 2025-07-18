@@ -50,6 +50,8 @@ const Pembayaran = () => {
 
   const fetchPembayaran = async () => {
     const data = await getAllPembayaran();
+    console.log('Fetched pembayaran data:', data); // Debug log
+    console.log('Current user:', user); // Debug log
     setPembayaran(data);
   };
 
@@ -546,6 +548,12 @@ const Pembayaran = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedData.map((item) => {
                 const pelangganDetail = pelanggan.find(p => p.id === item.id_pelanggan);
+                
+                // Debug log untuk driver access
+                if (user.role === "driver") {
+                  console.log(`Item ${item.id}: driver=${item.id_driver}, user=${user.id}, match=${item.id_driver === user.id}`);
+                }
+                
                 return (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.id}</td>
@@ -568,18 +576,28 @@ const Pembayaran = () => {
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.tanggal ? new Date(item.tanggal).toLocaleString('id-ID') : '-'}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.status || '-'}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
-                      <button
-                        onClick={() => handleSelesai(item)}
-                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm font-medium"
-                      >
-                        Selesai
-                      </button>
-                      <button
-                        onClick={() => handleCetakStruk(item.id)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm font-medium"
-                      >
-                        Cetak Struk
-                      </button>
+                      {/* Tombol Selesai - hanya untuk admin, kasir, atau driver yang ditugaskan */}
+                      {(user.role === "admin" || user.role === "kasir" || 
+                        (user.role === "driver" && item.id_driver === user.id)) && 
+                        item.status !== "Selesai" && (
+                        <button
+                          onClick={() => handleSelesai(item)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm font-medium"
+                        >
+                          Selesai
+                        </button>
+                      )}
+                      
+                      {/* Tombol Cetak - untuk admin, kasir, atau driver yang ditugaskan */}
+                      {(user.role === "admin" || user.role === "kasir" || 
+                        (user.role === "driver" && item.id_driver === user.id)) && (
+                        <button
+                          onClick={() => handleCetakStruk(item.id)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm font-medium"
+                        >
+                          Cetak Struk
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
