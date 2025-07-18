@@ -331,6 +331,7 @@ const Pelanggan = () => {
                   type="text"
                   value={form.nama}
                   onChange={(e) => setForm({ ...form, nama: e.target.value })}
+                  placeholder="Contoh: Ahmad Suherman"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -342,6 +343,7 @@ const Pelanggan = () => {
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="Contoh: ahmad.suherman@email.com"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -356,6 +358,7 @@ const Pelanggan = () => {
                     const value = e.target.value.replace(/[^0-9]/g, "")
                     setForm({ ...form, no_hp: value })
                   }}
+                  placeholder="Contoh: 081234567890 (minimal 10 digit)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                   inputMode="numeric"
@@ -368,6 +371,7 @@ const Pelanggan = () => {
                 <textarea
                   value={form.alamat}
                   onChange={(e) => setForm({ ...form, alamat: e.target.value })}
+                  placeholder="Contoh: Jl. Merdeka No. 123, RT 05/RW 03, Kelurahan Sukamaju, Kecamatan Bandung Utara, Kota Bandung, Jawa Barat 40123"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows="3"
                   required

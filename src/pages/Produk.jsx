@@ -340,8 +340,8 @@ const Produk = () => {
 
       {/* Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">
@@ -377,6 +377,7 @@ const Produk = () => {
                   type="text"
                   value={form.nama_produk}
                   onChange={(e) => setForm({ ...form, nama_produk: e.target.value })}
+                  placeholder="Contoh: Smartphone Samsung Galaxy A54"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -388,6 +389,7 @@ const Produk = () => {
                   type="text"
                   value={form.kategori}
                   onChange={(e) => setForm({ ...form, kategori: e.target.value })}
+                  placeholder="Contoh: Elektronik, Pakaian, Makanan, Minuman"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -399,6 +401,8 @@ const Produk = () => {
                   type="number"
                   value={form.harga}
                   onChange={(e) => setForm({ ...form, harga: e.target.value })}
+                  placeholder="Masukkan harga dalam rupiah (contoh: 5000000)"
+                  min="0"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -410,6 +414,8 @@ const Produk = () => {
                   type="number"
                   value={form.stok}
                   onChange={(e) => setForm({ ...form, stok: e.target.value })}
+                  placeholder="Jumlah barang tersedia (contoh: 50)"
+                  min="0"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -420,6 +426,7 @@ const Produk = () => {
                 <textarea
                   value={form.deskripsi}
                   onChange={(e) => setForm({ ...form, deskripsi: e.target.value })}
+                  placeholder="Deskripsi detail produk, spesifikasi, dan fitur-fitur yang dimiliki..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows="3"
                   required

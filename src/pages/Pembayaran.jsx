@@ -4,9 +4,7 @@ import { decodeJWT } from "../utils/jwtDecode";
 import { getAllPembayaran, createPembayaran } from "../services/pembayaranAPI";
 import { getAllPelanggan } from "../services/pelangganAPI";
 import { getAllDrivers } from "../services/driverAPI";
-import { getAllProduk, updateProduk } from "../services/produkAPI";
-import { format } from "date-fns";
-import { id } from "date-fns/locale";
+import { getAllProduk } from "../services/produkAPI";
 import Swal from "sweetalert2";
 import axiosInstance from "../services/axiosInstance";
 import PageWrapper from "../components/PageWrapper";
@@ -46,6 +44,7 @@ const Pembayaran = () => {
     fetchPelanggan();
     fetchProduk();
     fetchDrivers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchPembayaran = async () => {
@@ -65,7 +64,7 @@ const Pembayaran = () => {
     try {
       const data = await getAllDrivers();
       setDrivers(Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch {
       setDrivers([]);
     }
   };
@@ -625,11 +624,13 @@ const Pembayaran = () => {
       </Card>
 
       {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl mx-4">
-
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Transaksi Baru</h2>
-
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-gray-200 flex-shrink-0">
+              <h2 className="text-xl font-bold text-gray-900">Transaksi Baru</h2>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1">
             {/* Nama Kasir otomatis dari JWT, tidak bisa diubah */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Nama Kasir</label>
@@ -749,28 +750,32 @@ const Pembayaran = () => {
               <div className="text-xl font-bold text-blue-600">{formatRupiah(form.total_bayar)}</div>
             </div>
 
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowPopup(false);
-                  setForm({
-                    id_pelanggan: "",
-                    tanggal: new Date(),
-                    produk: [],
-                    total_bayar: 0,
-                  });
-                  setProdukDipilih([]);
-                }}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleSubmit}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-              >
-                Proses Pembayaran
-              </button>
+            </div>
+            
+            <div className="p-6 border-t border-gray-200 flex-shrink-0">
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowPopup(false);
+                    setForm({
+                      id_pelanggan: "",
+                      tanggal: new Date(),
+                      produk: [],
+                      total_bayar: 0,
+                    });
+                    setProdukDipilih([]);
+                  }}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+                >
+                  Proses Pembayaran
+                </button>
+              </div>
             </div>
           </div>
         </div>

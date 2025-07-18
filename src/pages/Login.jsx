@@ -42,6 +42,7 @@ export default function LoginPage({ onLogin }) {
             className="w-full border px-3 py-2 rounded"
             value={email}
             onChange={e => setEmail(e.target.value)}
+            placeholder="Contoh: admin@email.com"
             required
           />
         </div>
@@ -52,6 +53,7 @@ export default function LoginPage({ onLogin }) {
             className="w-full border px-3 py-2 rounded"
             value={password}
             onChange={e => setPassword(e.target.value)}
+            placeholder="Masukkan password Anda"
             required
           />
         </div>

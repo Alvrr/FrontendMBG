@@ -64,6 +64,7 @@ export default function RegisterPage() {
             className="w-full border px-3 py-2 rounded"
             value={form.nama}
             onChange={handleChange}
+            placeholder="Contoh: John Doe"
             required
           />
         </div>
@@ -75,6 +76,7 @@ export default function RegisterPage() {
             className="w-full border px-3 py-2 rounded"
             value={form.email}
             onChange={handleChange}
+            placeholder="Contoh: john.doe@email.com"
             required
           />
         </div>
@@ -86,6 +88,7 @@ export default function RegisterPage() {
             className="w-full border px-3 py-2 rounded"
             value={form.password}
             onChange={handleChange}
+            placeholder="Minimal 6 karakter"
             required
           />
         </div>
