@@ -86,42 +86,31 @@ const Produk = () => {
     }
     e.preventDefault()
 
-    let payload;
-    if (isEdit) {
-      payload = {
-        id: selectedId,
-        nama_produk: form.nama_produk,
-        kategori: form.kategori,
-        harga: Number(form.harga),
-        stok: Number(form.stok),
-        deskripsi: form.deskripsi,
-      }
-    } else {
-      payload = {
-        nama_produk: form.nama_produk,
-        kategori: form.kategori,
-        harga: Number(form.harga),
-        stok: Number(form.stok),
-        deskripsi: form.deskripsi,
-      }
+    // Buat payload yang sesuai dengan struktur backend
+    const payload = {
+      nama_produk: form.nama_produk,
+      kategori: form.kategori,
+      harga: Number(form.harga),
+      stok: Number(form.stok),
+      deskripsi: form.deskripsi,
     }
 
     if (
       !payload.nama_produk ||
       !payload.kategori ||
-      payload.harga === "" ||
-      payload.stok === "" ||
+      isNaN(payload.harga) ||
+      isNaN(payload.stok) ||
       !payload.deskripsi
     ) {
-      Swal.fire("Gagal", "Semua field wajib diisi", "error")
+      Swal.fire("Gagal", "Semua field wajib diisi dengan benar", "error")
       return
     }
-    if (isNaN(payload.harga) || payload.harga < 0) {
+    if (payload.harga <= 0) {
       Swal.fire("Gagal", "Harga harus berupa angka positif", "error")
       return
     }
-    if (isNaN(payload.stok) || payload.stok < 0) {
-      Swal.fire("Gagal", "Stok harus berupa angka positif", "error")
+    if (payload.stok < 0) {
+      Swal.fire("Gagal", "Stok tidak boleh negatif", "error")
       return
     }
 

@@ -96,15 +96,12 @@ const Pelanggan = () => {
       return
     }
 
-    let payload = {
+    // Buat payload yang sesuai dengan struktur backend
+    const payload = {
       nama: form.nama,
       email: form.email,
       no_hp: form.no_hp,
       alamat: form.alamat,
-    }
-
-    if (isEdit) {
-      payload.id = selectedId
     }
 
     const confirm = await Swal.fire({
