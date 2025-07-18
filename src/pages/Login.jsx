@@ -26,7 +26,7 @@ export default function LoginPage({ onLogin }) {
         },
         buttonsStyling: false
       });
-      navigate("/"); // redirect ke dashboard
+      navigate("/dashboard"); // redirect ke dashboard
     } catch (err) {
       setError(err.message || "Login gagal");
       await Swal.fire({

@@ -5,44 +5,71 @@ import {
   UserGroupIcon, 
   CreditCardIcon, 
   ClockIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  UsersIcon
 } from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react'
+import { decodeJWT } from '../utils/jwtDecode'
 
 const Sidebar = ({ isOpen }) => {
   const location = useLocation()
+  const [userRole, setUserRole] = useState('')
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    const decoded = decodeJWT(token)
+    setUserRole(decoded?.role || '')
+  }, [])
 
   const menuItems = [
     {
       name: 'Dashboard',
-      path: '/',
-      icon: HomeIcon
+      path: '/dashboard',
+      icon: HomeIcon,
+      roles: ['admin', 'kasir', 'driver']
     },
     {
       name: 'Produk',
       path: '/produk',
-      icon: CubeIcon
+      icon: CubeIcon,
+      roles: ['admin', 'kasir']
     },
     {
       name: 'Pelanggan',
       path: '/pelanggan',
-      icon: UserGroupIcon
+      icon: UserGroupIcon,
+      roles: ['admin', 'kasir']
     },
     {
       name: 'Pembayaran',
       path: '/pembayaran',
-      icon: CreditCardIcon
+      icon: CreditCardIcon,
+      roles: ['admin', 'kasir']
     },
     {
       name: 'Riwayat',
       path: '/riwayat',
-      icon: ClockIcon
+      icon: ClockIcon,
+      roles: ['admin', 'kasir', 'driver']
     },
     {
       name: 'Laporan',
       path: '/laporan',
-      icon: DocumentTextIcon
+      icon: DocumentTextIcon,
+      roles: ['admin']
+    },
+    {
+      name: 'Data Karyawan',
+      path: '/karyawan',
+      icon: UsersIcon,
+      roles: ['admin']
     }
   ]
+
+  // Filter menu berdasarkan role user
+  const filteredMenuItems = menuItems.filter(item => 
+    item.roles.includes(userRole)
+  )
 
   return (
     <div className={`fixed left-0 top-0 h-full bg-white shadow-lg transition-all duration-300 z-40 ${
@@ -63,7 +90,7 @@ const Sidebar = ({ isOpen }) => {
       {/* Navigation */}
       <nav className="mt-8 px-4">
         <ul className="space-y-2">
-          {menuItems.map((item) => {
+          {filteredMenuItems.map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.path
             

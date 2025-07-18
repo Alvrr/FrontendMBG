@@ -2,27 +2,50 @@ import React, { useEffect, useState } from "react"
 import { format } from "date-fns"
 import { id } from "date-fns/locale"
 import Swal from 'sweetalert2'
+import { decodeJWT } from "../utils/jwtDecode"
+import { getAllPembayaran } from "../services/pembayaranAPI"
+import { getAllPelanggan } from "../services/pelangganAPI"
 import PageWrapper from "../components/PageWrapper"
 import Card from "../components/Card"
 import { MagnifyingGlassIcon, DocumentArrowDownIcon, CalendarIcon, ShoppingCartIcon } from "@heroicons/react/24/outline"
 
 const Riwayat = () => {
   const [riwayat, setRiwayat] = useState([])
+  const [pelanggan, setPelanggan] = useState([])
+  const [user, setUser] = useState({ role: '', id: '' })
   const [searchId, setSearchId] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
 
   useEffect(() => {
+    // Ambil role dan id user dari JWT
+    const token = localStorage.getItem('token');
+    const decoded = decodeJWT(token);
+    setUser({ role: decoded?.role || '', id: decoded?.id || '' });
+    
     getRiwayat()
+    fetchPelanggan()
   }, [])
 
   const getRiwayat = async () => {
     try {
-      const riwayatData = JSON.parse(localStorage.getItem('riwayatPembayaran')) || []
-      setRiwayat(riwayatData)
+      const data = await getAllPembayaran()
+      // Filter hanya transaksi yang statusnya "Selesai"
+      const transaksiSelesai = Array.isArray(data) ? data.filter(item => item && item.status === 'Selesai') : []
+      setRiwayat(transaksiSelesai)
     } catch (error) {
       console.error("Error loading riwayat:", error)
       setRiwayat([])
+    }
+  }
+
+  const fetchPelanggan = async () => {
+    try {
+      const data = await getAllPelanggan()
+      setPelanggan(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error("Error loading pelanggan:", error)
+      setPelanggan([])
     }
   }
 
@@ -62,17 +85,23 @@ const Riwayat = () => {
   }
 
   const generateCSVContent = () => {
-    const headers = ['ID', 'Tanggal', 'Pelanggan', 'Produk', 'Total Bayar']
+    const headers = ['ID', 'Tanggal', 'Pelanggan', 'Kasir', 'Driver', 'Jenis Pengiriman', 'Produk', 'Ongkir', 'Total Bayar', 'Status']
     const csvRows = [headers.join(',')]
 
     riwayat.forEach(item => {
-      const produkList = item.produk?.map(p => `${p.nama_produk}(${p.jumlah})`).join('; ') || 'N/A'
+      const pelangganDetail = pelanggan.find(p => p.id === item.id_pelanggan)
+      const produkList = item.produk?.map(p => `${p.nama_produk || p.id_produk}(${p.jumlah})`).join('; ') || 'N/A'
       const row = [
         item.id,
-        format(new Date(item.tanggal), "dd/MM/yyyy"),
-        item.nama_pelanggan || 'N/A',
+        format(new Date(item.tanggal), "dd/MM/yyyy HH:mm"),
+        pelangganDetail?.nama || item.nama_pelanggan || 'N/A',
+        item.nama_kasir || 'N/A',
+        item.nama_driver || 'N/A',
+        item.jenis_pengiriman || 'N/A',
         `"${produkList}"`,
-        item.total_bayar || 0
+        item.ongkir || 0,
+        item.total_bayar || 0,
+        item.status || 'N/A'
       ]
       csvRows.push(row.join(','))
     })
@@ -94,8 +123,13 @@ const Riwayat = () => {
     }
   }
 
-  const filteredData = riwayat.filter((item) =>
-    searchId === "" || item.id.toString().includes(searchId)
+  // Filter data berdasarkan role user
+  const filteredByRole = user.role === 'driver'
+    ? riwayat.filter(item => item && item.id_driver === user.id)
+    : riwayat
+
+  const filteredData = filteredByRole.filter((item) =>
+    searchId === "" || item.id.toString().toLowerCase().includes(searchId.toLowerCase())
   )
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage)
@@ -109,9 +143,17 @@ const Riwayat = () => {
     setCurrentPage(newPage)
   }
 
-  // const totalTransaksi = riwayat.length
-  // const totalPendapatan = riwayat.reduce((sum, item) => sum + (item.total_bayar || 0), 0)
-  // const rataRataTransaksi = totalTransaksi > 0 ? totalPendapatan / totalTransaksi : 0
+  const formatRupiah = (angka) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+    }).format(angka);
+  }
+
+  // Stats untuk dashboard
+  const totalTransaksi = filteredByRole.length
+  const totalPendapatan = filteredByRole.reduce((sum, item) => sum + (item.total_bayar || 0), 0)
+  const rataRataTransaksi = totalTransaksi > 0 ? totalPendapatan / totalTransaksi : 0
 
   return (
     <PageWrapper 
@@ -127,7 +169,7 @@ const Riwayat = () => {
         </button>
       }
     >
-      {/* Stats Cards
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card>
           <div className="flex items-center">
@@ -135,7 +177,7 @@ const Riwayat = () => {
               <ShoppingCartIcon className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Transaksi</p>
+              <p className="text-sm font-medium text-gray-600">Total Transaksi Selesai</p>
               <p className="text-2xl font-semibold text-gray-900">{totalTransaksi}</p>
             </div>
           </div>
@@ -148,7 +190,7 @@ const Riwayat = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Pendapatan</p>
-              <p className="text-2xl font-semibold text-gray-900">Rp {totalPendapatan.toLocaleString('id-ID')}</p>
+              <p className="text-2xl font-semibold text-gray-900">{formatRupiah(totalPendapatan)}</p>
             </div>
           </div>
         </Card>
@@ -160,11 +202,11 @@ const Riwayat = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Rata-rata per Transaksi</p>
-              <p className="text-2xl font-semibold text-gray-900">Rp {Math.round(rataRataTransaksi).toLocaleString('id-ID')}</p>
+              <p className="text-2xl font-semibold text-gray-900">{formatRupiah(Math.round(rataRataTransaksi))}</p>
             </div>
           </div>
         </Card>
-      </div> */}
+      </div>
 
       {/* Search Bar */}
       <Card className="mb-6">
@@ -191,7 +233,7 @@ const Riwayat = () => {
           <div className="text-center py-12">
             <ShoppingCartIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Belum Ada Riwayat Transaksi</h3>
-            <p className="text-gray-500">Riwayat transaksi akan muncul di sini setelah ada pembayaran yang berhasil diproses.</p>
+            <p className="text-gray-500">Riwayat transaksi akan muncul di sini setelah ada pembayaran yang berhasil diselesaikan.</p>
           </div>
         ) : (
           <>
@@ -199,41 +241,73 @@ const Riwayat = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pelanggan</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pelanggan</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kasir</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Pengiriman</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ongkir</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Bayar</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedData.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {format(new Date(item.tanggal), "dd MMMM yyyy", { locale: id })}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.nama_pelanggan || 'N/A'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <div className="space-y-1">
-                          {item.produk?.map((produk, index) => (
-                            <div key={index} className="text-xs">
-                              {produk.nama_produk} ({produk.jumlah}x)
-                            </div>
-                          )) || 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                        Rp {(item.total_bayar || 0).toLocaleString('id-ID')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                          Selesai
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {paginatedData.map((item) => {
+                    const pelangganDetail = pelanggan.find(p => p.id === item.id_pelanggan);
+                    return (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.id}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {pelangganDetail?.nama || item.nama_pelanggan || '-'}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.nama_kasir || '-'}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.nama_driver || '-'}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            item.jenis_pengiriman === 'motor' ? 'bg-blue-100 text-blue-800' :
+                            item.jenis_pengiriman === 'mobil' ? 'bg-purple-100 text-purple-800' :
+                            item.jenis_pengiriman === 'ambil_sendiri' ? 'bg-gray-100 text-gray-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {item.jenis_pengiriman === 'motor' ? 'Motor' :
+                             item.jenis_pengiriman === 'mobil' ? 'Mobil' :
+                             item.jenis_pengiriman === 'ambil_sendiri' ? 'Ambil Sendiri' :
+                             item.jenis_pengiriman || '-'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-900">
+                          {item.produk && item.produk.length > 0 ? (
+                            <ul className="space-y-1">
+                              {item.produk.map((produk, index) => (
+                                <li key={index} className="text-xs">
+                                  <div className="font-medium">{produk.nama_produk || produk.id_produk}</div>
+                                  <div className="text-gray-500">{produk.jumlah}x @ {formatRupiah(produk.harga || 0)}</div>
+                                  <div className="text-blue-600 font-semibold">= {formatRupiah(produk.subtotal || 0)}</div>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : '-'}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{formatRupiah(item.ongkir || 0)}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                          {formatRupiah(item.total_bayar || 0)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div className="space-y-1">
+                            <div>{item.tanggal ? format(new Date(item.tanggal), "dd MMM yyyy", { locale: id }) : '-'}</div>
+                            <div className="text-xs text-gray-500">{item.tanggal ? format(new Date(item.tanggal), "HH:mm") : ''}</div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            {item.status || 'Selesai'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

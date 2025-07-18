@@ -1,7 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import { getAllProduk } from '../services/produkAPI';
+import { getAllPelanggan } from '../services/pelangganAPI';
+import { getAllPembayaran } from '../services/pembayaranAPI';
 import Card from '../components/Card'
+import RecentActivity from '../components/RecentActivity'
 import { 
   CubeIcon, 
   UserGroupIcon, 
@@ -32,30 +35,31 @@ const ModernDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const [produkRes, pelangganRes, pembayaranRes] = await Promise.all([
-        axios.get("http://localhost:5000/produk"),
-        axios.get("http://localhost:5000/pelanggan"),
-        axios.get("http://localhost:5000/pembayaran")
+      let [produk, pelanggan, pembayaran] = await Promise.all([
+        getAllProduk(),
+        getAllPelanggan(),
+        getAllPembayaran()
       ])
+      // Defensive: if null, set to []
+      produk = Array.isArray(produk) ? produk : [];
+      pelanggan = Array.isArray(pelanggan) ? pelanggan : [];
+      pembayaran = Array.isArray(pembayaran) ? pembayaran : [];
 
-      const produk = produkRes.data
-      const pelanggan = pelangganRes.data
-      const pembayaran = pembayaranRes.data
-
-      const totalPendapatan = pembayaran.reduce((sum, item) => sum + (item.total_bayar || 0), 0)
+      const totalPendapatan = pembayaran.reduce((sum, item) => sum + (item?.total_bayar || 0), 0)
       
       const today = new Date().toISOString().split('T')[0]
       const pembayaranHariIni = pembayaran.filter(item => 
-        item.tanggal && item.tanggal.startsWith(today)
+        item?.tanggal && item.tanggal.startsWith(today)
       ).length
 
       // Hitung produk terlaris
       const produkCount = {}
       pembayaran.forEach(payment => {
-        if (payment.produk) {
+        if (payment?.produk) {
           payment.produk.forEach(item => {
-            const key = item.nama_produk || item.id_produk
-            produkCount[key] = (produkCount[key] || 0) + (item.jumlah || 1)
+            const key = item?.nama_produk || item?.id_produk
+            if (!key) return;
+            produkCount[key] = (produkCount[key] || 0) + (item?.jumlah || 1)
           })
         }
       })
@@ -289,44 +293,11 @@ const ModernDashboard = () => {
         </Card>
 
         {/* Recent Activity */}
-        <Card>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Aktivitas Terbaru</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <CubeIcon className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Produk baru ditambahkan</p>
-                  <p className="text-xs text-gray-500">2 jam yang lalu</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <UserGroupIcon className="w-4 h-4 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Pelanggan baru terdaftar</p>
-                  <p className="text-xs text-gray-500">3 jam yang lalu</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between py-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <CreditCardIcon className="w-4 h-4 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Pembayaran berhasil diproses</p>
-                  <p className="text-xs text-gray-500">5 jam yang lalu</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <RecentActivity 
+          maxItems={5} 
+          showStats={false}
+          className=""
+        />
         </div>
     </div>
   )
