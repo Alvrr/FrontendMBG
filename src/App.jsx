@@ -1,6 +1,6 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import AdminLayout from './components/AdminLayout'
+import RoleBasedLayout from './components/RoleBasedLayout'
 import ModernDashboard from './pages/ModernDashboard'
 import Produk from './pages/Produk'
 import Pelanggan from './pages/Pelanggan'
@@ -21,14 +21,24 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         {/* Semua halaman lain wajib login */}
-        <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+        <Route element={<ProtectedRoute><RoleBasedLayout /></ProtectedRoute>}>
           <Route path="/dashboard" element={<ModernDashboard />} />
           <Route path="/produk" element={<Produk />} />
           <Route path="/pelanggan" element={<Pelanggan />} />
           <Route path="/pembayaran" element={<Pembayaran />} />
-          <Route path="/laporan" element={<Laporan />} />
           <Route path="/riwayat" element={<Riwayat />} />
-          <Route path="/karyawan" element={<Karyawan />} />
+          {/* Laporan hanya untuk admin */}
+          <Route path="/laporan" element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <Laporan />
+            </ProtectedRoute>
+          } />
+          {/* Data Karyawan hanya untuk admin */}
+          <Route path="/karyawan" element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <Karyawan />
+            </ProtectedRoute>
+          } />
         </Route>
       </Routes>
     </Router>

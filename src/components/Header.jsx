@@ -1,6 +1,60 @@
 import { BellIcon, UserCircleIcon, Bars3Icon } from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react'
+import { decodeJWT } from '../utils/jwtDecode'
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
+  const [userRole, setUserRole] = useState('')
+  const [userName, setUserName] = useState('')
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    const decoded = decodeJWT(token)
+    setUserRole(decoded?.role || '')
+    setUserName(decoded?.username || decoded?.name || '')
+  }, [])
+
+  // Function untuk mendapatkan title berdasarkan role
+  const getDashboardTitle = () => {
+    switch (userRole) {
+      case 'admin':
+        return 'Dashboard Admin'
+      case 'driver':
+        return 'Dashboard Driver'
+      case 'kasir':
+        return 'Dashboard Kasir'
+      default:
+        return 'Dashboard'
+    }
+  }
+
+  // Function untuk mendapatkan role display name
+  const getRoleDisplayName = () => {
+    switch (userRole) {
+      case 'admin':
+        return 'Administrator'
+      case 'driver':
+        return 'Driver'
+      case 'kasir':
+        return 'Kasir'
+      default:
+        return 'User'
+    }
+  }
+
+  // Function untuk mendapatkan user display name
+  const getUserDisplayName = () => {
+    switch (userRole) {
+      case 'admin':
+        return 'Admin'
+      case 'driver':
+        return userName || 'Driver'
+      case 'kasir':
+        return userName || 'Kasir'
+      default:
+        return userName || 'User'
+    }
+  }
+
   return (
     <header className={`fixed top-0 bg-white shadow-sm border-b border-gray-200 h-16 z-30 transition-all duration-300 ${
       isSidebarOpen ? 'left-64' : 'left-20'
@@ -17,7 +71,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           
           <div className="hidden md:block">
             <h1 className="text-lg font-semibold text-gray-800">
-              Dashboard Admin
+              {getDashboardTitle()}
             </h1>
           </div>
         </div>
@@ -33,8 +87,8 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           {/* User Menu */}
           <div className="flex items-center space-x-3">
             <div className="hidden sm:block text-right">
-              <p className="text-sm font-medium text-gray-700">Admin</p>
-              <p className="text-xs text-gray-500">Administrator</p>
+              <p className="text-sm font-medium text-gray-700">{getUserDisplayName()}</p>
+              <p className="text-xs text-gray-500">{getRoleDisplayName()}</p>
             </div>
             <div className="relative">
               <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors">
