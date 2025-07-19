@@ -3,7 +3,6 @@ import { format } from "date-fns"
 import { id } from "date-fns/locale"
 import Swal from 'sweetalert2'
 import { decodeJWT } from "../utils/jwtDecode"
-import { getAllPembayaran } from "../services/pembayaranAPI"
 import { getAllPelanggan } from "../services/pelangganAPI"
 import axiosInstance from "../services/axiosInstance"
 import PageWrapper from "../components/PageWrapper"

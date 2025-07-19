@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { getAllProduk } from '../services/produkAPI';
 import { getAllPelanggan } from '../services/pelangganAPI';
 import { getAllPembayaran } from '../services/pembayaranAPI';
+import { decodeJWT } from '../utils/jwtDecode';
 import Card from '../components/Card'
 import RecentActivity from '../components/RecentActivity'
 import { 
@@ -18,6 +19,7 @@ import {
 
 const ModernDashboard = () => {
   const navigate = useNavigate()
+  const [user, setUser] = useState({ role: '', id: '' })
   const [stats, setStats] = useState({
     totalProduk: 0,
     totalPelanggan: 0,
@@ -27,11 +29,7 @@ const ModernDashboard = () => {
     produkTerlaris: []
   })
 
-  useEffect(() => {
-    fetchStats()
-  }, [])
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       let [produk, pelanggan, pembayaran] = await Promise.all([
         getAllProduk(),
@@ -43,16 +41,23 @@ const ModernDashboard = () => {
       pelanggan = Array.isArray(pelanggan) ? pelanggan : [];
       pembayaran = Array.isArray(pembayaran) ? pembayaran : [];
 
-      const totalPendapatan = pembayaran.reduce((sum, item) => sum + (item?.total_bayar || 0), 0)
+      // Filter pembayaran berdasarkan role - sama seperti implementasi driver dan kasir
+      const filteredPembayaran = user.role === 'driver'
+        ? pembayaran.filter(item => item && item.id_driver === user.id)
+        : user.role === 'kasir'
+        ? pembayaran.filter(item => item && item.id_kasir === user.id)
+        : pembayaran;
+
+      const totalPendapatan = filteredPembayaran.reduce((sum, item) => sum + (item?.total_bayar || 0), 0)
       
       const today = new Date().toISOString().split('T')[0]
-      const pembayaranHariIni = pembayaran.filter(item => 
+      const pembayaranHariIni = filteredPembayaran.filter(item => 
         item?.tanggal && item.tanggal.startsWith(today)
       ).length
 
-      // Hitung produk terlaris
+      // Hitung produk terlaris berdasarkan data yang sudah difilter
       const produkCount = {}
-      pembayaran.forEach(payment => {
+      filteredPembayaran.forEach(payment => {
         if (payment?.produk) {
           payment.produk.forEach(item => {
             const key = item?.nama_produk || item?.id_produk
@@ -70,7 +75,7 @@ const ModernDashboard = () => {
       setStats({
         totalProduk: produk.length,
         totalPelanggan: pelanggan.length,
-        totalPembayaran: pembayaran.length,
+        totalPembayaran: filteredPembayaran.length,
         totalPendapatan,
         pembayaranHariIni,
         produkTerlaris
@@ -78,7 +83,20 @@ const ModernDashboard = () => {
     } catch (error) {
       console.error("Error fetching stats:", error)
     }
-  }
+  }, [user.role, user.id])
+
+  useEffect(() => {
+    // Ambil role dan id user dari JWT
+    const token = localStorage.getItem('token');
+    const decoded = decodeJWT(token);
+    setUser({ role: decoded?.role || '', id: decoded?.id || '' });
+  }, [])
+
+  useEffect(() => {
+    if (user.role) {
+      fetchStats()
+    }
+  }, [user.role, user.id, fetchStats])
 
   const menuCards = [
     { 
