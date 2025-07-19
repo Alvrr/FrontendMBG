@@ -534,8 +534,7 @@ const DataKaryawan = () => {
                     onChange={e => setFormData({ ...formData, role: e.target.value })} 
                     required
                   >
-                    <option value="admin">Admin</option>
-                    <option value="kasir">Kasir</option>
+                    <option value="kasir">Karyawan</option>
                     <option value="driver">Driver</option>
                   </select>
                 </div>
