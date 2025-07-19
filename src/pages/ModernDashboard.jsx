@@ -119,6 +119,18 @@ const ModernDashboard = () => {
     },
   ]
 
+  const formatRupiah = (angka) => {
+    if (angka >= 1000000000) {
+      return `Rp ${(angka / 1000000000).toFixed(1)} M`
+    } else if (angka >= 1000000) {
+      return `Rp ${(angka / 1000000).toFixed(1)} Jt`
+    } else if (angka >= 1000) {
+      return `Rp ${(angka / 1000).toFixed(0)} Rb`
+    } else {
+      return `Rp ${angka.toLocaleString('id-ID')}`
+    }
+  }
+
   const statsCards = [
     {
       title: 'Total Produk',
@@ -126,7 +138,6 @@ const ModernDashboard = () => {
       icon: ShoppingBagIcon,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
-      change: '+12%',
       changeType: 'increase'
     },
     {
@@ -135,16 +146,15 @@ const ModernDashboard = () => {
       icon: UsersIcon,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
-      change: '+8%',
       changeType: 'increase'
     },
     {
       title: 'Pembayaran Bulan Ini',
-      value: `Rp ${stats.totalPendapatan.toLocaleString('id-ID')}`,
+      value: formatRupiah(stats.totalPendapatan),
+      fullValue: `Rp ${stats.totalPendapatan.toLocaleString('id-ID')}`,
       icon: BanknotesIcon,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
-      change: '+15%',
       changeType: 'increase'
     },
     {
@@ -153,7 +163,6 @@ const ModernDashboard = () => {
       icon: ArrowTrendingUpIcon,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
-      change: '+3%',
       changeType: 'increase'
     }
   ]
@@ -168,25 +177,37 @@ const ModernDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
         {statsCards.map((stat, index) => {
           const Icon = stat.icon
           return (
             <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
-              <div className="flex items-center">
-                <div className={`${stat.bgColor} p-3 rounded-lg`}>
-                  <Icon className={`w-6 h-6 ${stat.color}`} />
+              <div className="flex items-center p-1">
+                <div className={`${stat.bgColor} p-3 rounded-lg flex-shrink-0`}>
+                  <Icon className={`w-5 h-5 md:w-6 md:h-6 ${stat.color}`} />
                 </div>
-                <div className="ml-4 flex-1">
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                <div className="ml-3 md:ml-4 flex-1 min-w-0">
+                  <p className="text-xs md:text-sm font-medium text-gray-600 truncate">{stat.title}</p>
                   <div className="flex items-center mt-1">
-                    <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-                    <span className={`ml-2 text-sm font-medium ${
-                      stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {stat.change}
-                    </span>
+                    <p 
+                      className="text-base md:text-lg lg:text-xl font-semibold text-gray-900 truncate"
+                      title={stat.fullValue || stat.value}
+                    >
+                      {stat.value}
+                    </p>
+                    {stat.change && (
+                      <span className={`ml-2 text-xs md:text-sm font-medium flex-shrink-0 ${
+                        stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {stat.change}
+                      </span>
+                    )}
                   </div>
+                  {stat.fullValue && stat.fullValue !== stat.value && (
+                    <p className="text-xs text-gray-500 mt-1 truncate" title={stat.fullValue}>
+                      {stat.fullValue}
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>

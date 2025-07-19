@@ -18,7 +18,6 @@ import {
 function Laporan() {
   const [transaksi, setTransaksi] = useState([])
   const [pelanggan, setPelanggan] = useState([])
-  const [user, setUser] = useState({ role: '', id: '' })
   const [loading, setLoading] = useState(false)
   
   // Filter states
@@ -37,7 +36,6 @@ function Laporan() {
     // Check if user is admin
     const token = localStorage.getItem('token');
     const decoded = decodeJWT(token);
-    setUser({ role: decoded?.role || '', id: decoded?.id || '' });
     
     if (decoded?.role !== 'admin') {
       Swal.fire({
@@ -312,62 +310,62 @@ function Laporan() {
       }
     >
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6">
+        <Card className="col-span-1">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-blue-100">
+            <div className="p-3 rounded-lg bg-blue-100 flex-shrink-0">
               <ChartBarIcon className="w-6 h-6 text-blue-600" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Total Transaksi</p>
+            <div className="ml-3 min-w-0 flex-1">
+              <p className="text-sm font-medium text-gray-600 truncate">Total Transaksi</p>
               <p className="text-xl font-semibold text-gray-900">{stats.totalTransaksi}</p>
             </div>
           </div>
         </Card>
 
-        <Card>
+        <Card className="col-span-1 sm:col-span-2 lg:col-span-1">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-green-100">
+            <div className="p-3 rounded-lg bg-green-100 flex-shrink-0">
               <DocumentArrowDownIcon className="w-6 h-6 text-green-600" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Total Pendapatan</p>
-              <p className="text-lg font-semibold text-gray-900">{formatRupiah(stats.totalPendapatan)}</p>
+            <div className="ml-3 min-w-0 flex-1">
+              <p className="text-sm font-medium text-gray-600 truncate">Total Pendapatan</p>
+              <p className="text-sm font-semibold text-gray-900 leading-tight">{formatRupiah(stats.totalPendapatan)}</p>
             </div>
           </div>
         </Card>
 
-        <Card>
+        <Card className="col-span-1">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-purple-100">
+            <div className="p-3 rounded-lg bg-purple-100 flex-shrink-0">
               <CalendarIcon className="w-6 h-6 text-purple-600" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Rata-rata</p>
-              <p className="text-lg font-semibold text-gray-900">{formatRupiah(stats.rataRataTransaksi)}</p>
+            <div className="ml-3 min-w-0 flex-1">
+              <p className="text-sm font-medium text-gray-600 truncate">Rata-rata</p>
+              <p className="text-sm font-semibold text-gray-900 leading-tight">{formatRupiah(stats.rataRataTransaksi)}</p>
             </div>
           </div>
         </Card>
 
-        <Card>
+        <Card className="col-span-1">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-emerald-100">
+            <div className="p-3 rounded-lg bg-emerald-100 flex-shrink-0">
               <ChartBarIcon className="w-6 h-6 text-emerald-600" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Selesai</p>
+            <div className="ml-3 min-w-0 flex-1">
+              <p className="text-sm font-medium text-gray-600 truncate">Selesai</p>
               <p className="text-xl font-semibold text-gray-900">{stats.transaksiSelesai}</p>
             </div>
           </div>
         </Card>
 
-        <Card>
+        <Card className="col-span-1">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-orange-100">
+            <div className="p-3 rounded-lg bg-orange-100 flex-shrink-0">
               <ChartBarIcon className="w-6 h-6 text-orange-600" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Pending</p>
+            <div className="ml-3 min-w-0 flex-1">
+              <p className="text-sm font-medium text-gray-600 truncate">Pending</p>
               <p className="text-xl font-semibold text-gray-900">{stats.transaksiPending}</p>
             </div>
           </div>
