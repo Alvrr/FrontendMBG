@@ -123,9 +123,11 @@ const Riwayat = () => {
     }
   }
 
-  // Filter data berdasarkan role user
+  // Filter data berdasarkan role user - sama seperti implementasi driver
   const filteredByRole = user.role === 'driver'
     ? riwayat.filter(item => item && item.id_driver === user.id)
+    : user.role === 'kasir'
+    ? riwayat.filter(item => item && item.id_kasir === user.id)
     : riwayat
 
   const filteredData = filteredByRole.filter((item) =>

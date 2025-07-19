@@ -476,9 +476,11 @@ const Pembayaran = () => {
   const pembayaranArr = Array.isArray(pembayaran) ? pembayaran : [];
   // Filter transaksi aktif (status !== 'Selesai')
   const transaksiAktif = pembayaranArr.filter(item => item && item.status !== 'Selesai');
-  // Filter sesuai role
+  // Filter sesuai role - sama seperti implementasi driver
   const transaksiTampil = user.role === 'driver'
     ? transaksiAktif.filter(item => item && item.id_driver === user.id)
+    : user.role === 'kasir'
+    ? transaksiAktif.filter(item => item && item.id_kasir === user.id)
     : transaksiAktif;
   // Search
   const filteredPembayaran = transaksiTampil.filter((item) =>
