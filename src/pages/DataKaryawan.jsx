@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { getAllKaryawan, createKaryawan, updateKaryawan, deleteKaryawan, toggleKaryawanStatus } from '../services/karyawanAPI';
+import { getAllKaryawan, createKaryawan, updateKaryawan, deleteKaryawan } from '../services/karyawanAPI';
 import { 
   showSuccessAlert, 
   showErrorAlert, 
   showDeleteConfirmAlert,
-  showConfirmAlert,
   showWarningAlert
 } from '../utils/alertUtils';
 import { UserPlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, UserGroupIcon, ShieldCheckIcon, TruckIcon, FunnelIcon } from '@heroicons/react/24/outline';
@@ -223,31 +222,6 @@ const DataKaryawan = () => {
     }
   };
 
-  const handleToggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === 'aktif' ? 'nonaktif' : 'aktif';
-    const confirm = await showConfirmAlert(
-      'Konfirmasi Ubah Status',
-      `Yakin ingin ${newStatus === 'aktif' ? 'mengaktifkan' : 'menonaktifkan'} karyawan ini?`,
-      'Ya, Ubah',
-      'Batal'
-    );
-    if (!confirm.isConfirmed) return;
-    
-    try {
-      await toggleKaryawanStatus(id, newStatus);
-      showSuccessAlert(
-        'Sukses',
-        'Status karyawan berhasil diubah'
-      );
-      fetchKaryawan();
-    } catch (err) {
-      showErrorAlert(
-        'Error',
-        err?.response?.data?.message || 'Gagal ubah status'
-      );
-    }
-  };
-
   // Filter dan search dengan pagination
   const filteredKaryawan = karyawan.filter(k => {
     const matchRole = roleFilter === 'all' || k.role === roleFilter;
@@ -409,18 +383,10 @@ const DataKaryawan = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center justify-between max-w-32">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${k.status === 'aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${k.status === 'aktif' ? 'bg-green-400' : 'bg-red-400'}`}></div>
-                          {k.status === 'aktif' ? 'Aktif' : 'Non-aktif'}
-                        </span>
-                        <button
-                          className="text-xs text-blue-600 hover:text-blue-900 underline ml-2"
-                          onClick={() => handleToggleStatus(k.id, k.status)}
-                        >
-                          {k.status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan'}
-                        </button>
-                      </div>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${k.status === 'aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${k.status === 'aktif' ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                        {k.status === 'aktif' ? 'Aktif' : 'Non-aktif'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {k.no_hp || <span className="text-gray-400">-</span>}
