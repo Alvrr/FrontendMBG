@@ -79,10 +79,10 @@ const Sidebar = ({ isOpen }) => {
       <div className="flex items-center justify-center h-16 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">BM</span>
+            <span className="text-white font-bold text-sm">BG</span>
           </div>
           {isOpen && (
-            <span className="text-xl font-bold text-gray-800">Bisnis Mikro</span>
+            <span className="text-xl font-bold text-gray-800">Bisnis Grosir</span>
           )}
         </div>
       </div>
