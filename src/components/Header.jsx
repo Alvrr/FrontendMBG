@@ -1,4 +1,4 @@
-import { BellIcon, UserCircleIcon, Bars3Icon, ChevronDownIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
+import { UserCircleIcon, Bars3Icon, ChevronDownIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { decodeJWT } from '../utils/jwtDecode'
@@ -16,7 +16,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     const token = localStorage.getItem('token')
     const decoded = decodeJWT(token)
     setUserRole(decoded?.role || '')
-    setUserName(decoded?.username || decoded?.name || '')
+    setUserName(decoded?.nama || '') // Menggunakan field 'nama' dari JWT token
   }, [])
 
   // Close dropdown when clicking outside
@@ -63,16 +63,8 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   // Function untuk mendapatkan user display name
   const getUserDisplayName = () => {
-    switch (userRole) {
-      case 'admin':
-        return 'Admin'
-      case 'driver':
-        return userName || 'Driver'
-      case 'kasir':
-        return userName || 'Kasir'
-      default:
-        return userName || 'User'
-    }
+    // Menampilkan nama dari database, fallback ke role jika nama kosong
+    return userName || `${userRole || 'User'}`
   }
 
   // Handle logout
@@ -117,14 +109,8 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           </div>
         </div>
 
-        {/* Right side - Notifications and User */}
+        {/* Right side - User Menu */}
         <div className="flex items-center space-x-4">
-          {/* Notifications */}
-          <button className="relative p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-lg transition-colors">
-            <BellIcon className="w-6 h-6" />
-            <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-          </button>
-
           {/* User Menu */}
           <div className="flex items-center space-x-3" ref={dropdownRef}>
             <div className="hidden sm:block text-right">
