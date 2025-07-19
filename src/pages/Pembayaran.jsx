@@ -733,13 +733,40 @@ const Pembayaran = () => {
                   value={form.id_driver}
                   onChange={e => {
                     const selected = drivers.find(d => d.id === e.target.value);
+                    
+                    // Validasi status driver
+                    if (selected && selected.status === 'nonaktif') {
+                      Swal.fire({
+                        icon: "warning",
+                        title: "Driver Tidak Aktif",
+                        text: `Driver ${selected.nama} sedang dalam status non-aktif dan tidak dapat dipilih untuk pengiriman.`,
+                        confirmButtonText: "OK",
+                        customClass: {
+                          confirmButton: "bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600",
+                        },
+                        buttonsStyling: false,
+                      });
+                      // Reset pilihan driver
+                      setForm(f => ({ ...f, id_driver: "", nama_driver: "" }));
+                      return;
+                    }
+                    
                     setForm(f => ({ ...f, id_driver: selected ? selected.id : "", nama_driver: selected ? selected.nama : "" }));
                   }}
                   required
                 >
                   <option value="">Pilih Driver</option>
                   {drivers.map((d) => (
-                    <option key={d.id} value={d.id}>{d.nama} ({d.id})</option>
+                    <option 
+                      key={d.id} 
+                      value={d.id}
+                      style={{
+                        color: d.status === 'nonaktif' ? '#9CA3AF' : '#000000',
+                        fontStyle: d.status === 'nonaktif' ? 'italic' : 'normal'
+                      }}
+                    >
+                      {d.nama} ({d.id}) {d.status === 'nonaktif' ? '- Non Aktif' : ''}
+                    </option>
                   ))}
                 </select>
               </div>
