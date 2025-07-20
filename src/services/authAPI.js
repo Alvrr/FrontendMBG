@@ -4,7 +4,7 @@ const API_URL = "https://backendmbg-production.up.railway.app/";
 
 export async function loginService({ email, password }) {
   try {
-    const res = await axios.post(`${API_URL}/auth/login`, { email, password });
+    const res = await axios.post(`${API_URL}auth/login`, { email, password });
     if (res.data.token) {
       localStorage.setItem("token", res.data.token);
     }
