@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "https://backendmbgg-production.up.railway.app/";
 
 export async function loginService({ email, password }) {
   try {

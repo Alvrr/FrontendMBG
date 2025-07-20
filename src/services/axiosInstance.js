@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getToken } from "./authAPI";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "https://backendmbgg-production.up.railway.app/";
 
 const axiosInstance = axios.create({
   baseURL: API_URL,

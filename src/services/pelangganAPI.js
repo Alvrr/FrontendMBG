@@ -1,8 +1,3 @@
-
-
-
-
-
 import axiosInstance from "./axiosInstance";
 
 export async function getAllPelanggan() {
