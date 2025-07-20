@@ -67,7 +67,7 @@ export const parsePaymentActivities = (payments, users = {}) => {
 };
 
 // Fungsi untuk mengkonversi data produk menjadi aktivitas (simulasi)
-export const parseProductActivities = (products, users = {}) => {
+export const parseProductActivities = (products) => {
   if (!Array.isArray(products)) return [];
   
   // Karena kita tidak punya timestamp yang tepat, kita buat simulasi berdasarkan data yang ada
@@ -88,7 +88,7 @@ export const parseProductActivities = (products, users = {}) => {
 };
 
 // Fungsi untuk mengkonversi data pelanggan menjadi aktivitas (simulasi)
-export const parseCustomerActivities = (customers, users = {}) => {
+export const parseCustomerActivities = (customers) => {
   if (!Array.isArray(customers)) return [];
   
   return customers.slice(0, 3).map((customer, index) => ({
@@ -107,7 +107,7 @@ export const parseCustomerActivities = (customers, users = {}) => {
 };
 
 // Fungsi untuk mengkonversi data karyawan menjadi aktivitas
-export const parseEmployeeActivities = (employees, users = {}) => {
+export const parseEmployeeActivities = (employees) => {
   if (!Array.isArray(employees)) return [];
   
   return employees.slice(0, 5).map((employee, index) => ({
@@ -130,9 +130,9 @@ export const parseEmployeeActivities = (employees, users = {}) => {
 export const combineActivities = (payments = [], products = [], customers = [], employees = [], users = {}) => {
   const activities = [
     ...parsePaymentActivities(payments, users),
-    ...parseProductActivities(products, users),
-    ...parseCustomerActivities(customers, users),
-    ...parseEmployeeActivities(employees, users)
+    ...parseProductActivities(products),
+    ...parseCustomerActivities(customers),
+    ...parseEmployeeActivities(employees)
   ];
   
   // Urutkan berdasarkan timestamp (terbaru dulu)
